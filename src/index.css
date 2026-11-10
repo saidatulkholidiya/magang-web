@@ -1,0 +1,15 @@
+:root {
+  --warna-utama: #2563eb;
+  --warna-bahaya: #dc2626;
+  --warna-sukses: #16a34a;
+  --warna-teks: #1f2937;
+  --warna-latar: #f9fafb;
+  --jari-jari: 8px;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  color: var(--warna-teks);
+  background: var(--warna-latar);
+}

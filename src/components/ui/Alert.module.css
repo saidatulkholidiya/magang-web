@@ -1,0 +1,4 @@
+.alert { padding: 12px; border-radius: var(--jari-jari); margin-bottom: 16px; font-weight: 500; }
+.info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.sukses { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.bahaya { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }

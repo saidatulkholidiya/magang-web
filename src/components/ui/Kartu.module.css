@@ -1,0 +1,6 @@
+.kartu {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--jari-jari);
+  padding: 16px;
+}

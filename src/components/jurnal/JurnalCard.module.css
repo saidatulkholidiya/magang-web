@@ -1,0 +1,7 @@
+.itemJurnal {
+  background: var(--warna-kotak);
+  border: 1px solid var(--warna-garis);
+  border-radius: var(--sudut-lengkung);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
