@@ -147,3 +147,25 @@ Hasil: nomor stabil 1, 2, 3. Props sama → tampilan sama.
 ## Jawaban Soal 8 (Rabu): Kenapa key sebaiknya ID dari database, bukan indeks array?
 
 `key` adalah pengenal unik tiap item agar React bisa melacak item mana yang sama saat daftar berubah (ditambah, dihapus, atau diurutkan ulang). ID dari database bersifat **stabil** — nilainya tidak berubah antar render, sehingga React bisa memindahkan elemen dengan benar meskipun posisinya berubah. Sebaliknya, **indeks array berbahaya**: jika item pertama dihapus, item kedua akan "berpindah" ke indeks 0, dan React akan salah mengira itu adalah item yang sama. Akibatnya, kondisi internal komponen (seperti state atau isi input) bisa menempel ke item yang salah. Karena itu, selalu gunakan ID unik dari data sebagai `key`.
+
+# Halaman Daftar Jurnal
+
+Deskripsi singkat: Halaman statis untuk menampilkan daftar jurnal harian peserta magang, lengkap dengan ringkasan status dan detail jurnal.
+
+## Cara Menjalankan
+1. `npm install`
+2. `npm run dev`
+3. Buka `http://localhost:5173`
+
+## Struktur Folder
+- `src/components/ui`: Komponen UI generik (Button, Alert, Kartu, Badge) yang tidak tahu tentang domain jurnal.
+- `src/components/jurnal`: Komponen spesifik untuk jurnal (DaftarJurnal, JurnalCard, dll).
+- `src/components/layout`: Komponen kerangka halaman (Header).
+- `src/data`: Data tiruan statis.
+- `src/types`: Definisi tipe TypeScript.
+- `src/utils`: Fungsi bantuan (format tanggal, cx).
+
+## 3 Keputusan Desain
+1. **Pemisahan UI dan Jurnal**: Komponen di `components/ui` (seperti Button) dibuat sangat generik agar bisa dipakai ulang di halaman mana pun. Komponen di `components/jurnal` khusus menangani logika tampilan jurnal.
+2. **Penanganan Field Null**: Semua field opsional seperti `hambatan`, `catatanMentor`, dan `linkCommit` diperiksa dengan *conditional rendering* (`&&`) agar tidak memunculkan teks "null" di layar.
+3. **Pengurutan Tanpa Mutasi**: Fungsi `.sort()` di `DaftarJurnal` dilakukan pada salinan array (`[...jurnal]`) agar data asli dari API tidak berubah.

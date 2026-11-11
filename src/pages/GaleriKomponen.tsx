@@ -3,22 +3,12 @@ import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
 import { Badge } from "../components/ui/Badge";
 import { Kartu } from "../components/ui/Kartu";
-import { StatusBadge } from "../components/jurnal/StatusBadge";
-import { JurnalCard } from "../components/jurnal/JurnalCard";
-import type { Jurnal } from "../types/jurnal";
+import StatusBadge from "../components/jurnal/StatusBadge";
+import JurnalCard from "../components/jurnal/JurnalCard";
+import { jurnalTiruan } from "../data/jurnalTiruan";
 
 const varian = ["primary", "secondary", "danger"] as const;
 const ukuran = ["sm", "md"] as const;
-
-
-const contoh: Jurnal = {
-  id: 7,
-  kegiatan: "Belajar CSS Modules",
-  tanggal: "2026-11-11T05:30:00.000Z",
-  statusReview: "menunggu",
-  hambatan: null,
-  lampiran: [],
-} as Jurnal;
 
 export function GaleriKomponen() {
   function klik(e: MouseEvent<HTMLButtonElement>) {
@@ -87,23 +77,16 @@ export function GaleriKomponen() {
       <section>
   <h2>StatusBadge</h2>
   <div style={{ display: "flex", gap: 8 }}>
-    <StatusBadge status="menunggu" />
-    <StatusBadge status="disetujui" />
-    <StatusBadge status="revisi" />
+    <StatusBadge status="belum" />
+          <StatusBadge status="sudah" />
   </div>
 </section>
 
-      <section>
+            <section>
         <h2>JurnalCard</h2>
         <div style={{ display: "grid", gap: 12 }}>
-          <h3>Tanpa onHapus (tombol tidak ada)</h3>
-          <JurnalCard jurnal={contoh} />
-
-          <h3>Dengan onHapus (cek console)</h3>
-          <JurnalCard
-            jurnal={contoh}
-            onHapus={(id) => console.log("hapus", id)}
-          />
+          {/* Cukup tampilkan JurnalCard statis dari data jurnalTiruan */}
+          <JurnalCard jurnal={jurnalTiruan[0]} />
         </div>
       </section>
 

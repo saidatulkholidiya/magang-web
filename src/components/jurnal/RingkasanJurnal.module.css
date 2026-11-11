@@ -1,0 +1,13 @@
+.ringkasan {
+  display: flex;
+  gap: 2rem;
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: var(--jari-jari);
+  margin-bottom: 1.5rem;
+}
+.item { display: flex; flex-direction: column; }
+.item span { font-size: 0.875rem; color: #666; }
+.item strong { font-size: 1.25rem; margin-top: 0.25rem; }
+.sukses { color: var(--warna-sukses); }
+.bahaya { color: var(--warna-bahaya); }

@@ -1,5 +1,5 @@
 import type { Jurnal } from "../types/jurnal";
-import DaftarJurnal from "./DaftarJurnal";
+import DaftarJurnal from "./jurnal/DaftarJurnal";
 
 // Tipe Union: Properti "status" menentukan properti apa yang wajib ada
 type HasilJurnalProps =

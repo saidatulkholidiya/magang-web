@@ -5,6 +5,6 @@
   font-size: 0.8rem;
   font-weight: 600;
 }
-.menunggu  { background: #fef3c7; color: #92400e; }
-.disetujui { background: #dcfce7; color: #166534; }
+.belum  { background: #fef3c7; color: #92400e; }
+.sudah { background: #dcfce7; color: #166534; }
 .revisi    { background: #dbeafe; color: #1e40af; }

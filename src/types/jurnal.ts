@@ -1,10 +1,18 @@
-export type StatusReview = "menunggu" | "disetujui" | "revisi";
+export type StatusReview = "belum" | "sudah";
+
+export interface Lampiran {
+  url: string;
+  keterangan?: string;
+}
 
 export interface Jurnal {
   id: number;
+  pesertaId: number;
   kegiatan: string;
-  tanggal: string;
+  hambatan?: string | null;
+  linkCommit?: string | null;
+  lampiran?: Lampiran[] | null;
   statusReview: StatusReview;
-  hambatan: string | null;
-  lampiran: string[];
+  catatanMentor?: string | null;
+  createdAt: string;
 }
