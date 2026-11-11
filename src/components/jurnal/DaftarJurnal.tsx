@@ -1,16 +1,17 @@
-import type { Jurnal } from "../../types/jurnal";
+import type { Jurnal, StatusReview } from "../../types/jurnal";
 import JurnalCard from "./JurnalCard";
 
 interface DaftarJurnalProps {
-  jurnal: Jurnal[];
+  jurnal: readonly Jurnal[];
+  onHapus: (id: number) => void;
+  onUbahStatus: (id: number, status: StatusReview) => void;
 }
 
-export default function DaftarJurnal({ jurnal }: DaftarJurnalProps) {
+export default function DaftarJurnal({ jurnal, onHapus, onUbahStatus }: DaftarJurnalProps) {
   if (jurnal.length === 0) {
     return <p>Belum ada jurnal.</p>;
   }
 
-  // Mengurutkan dari terbaru tanpa merusak array asli
   const jurnalTerbaru = [...jurnal].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -18,7 +19,12 @@ export default function DaftarJurnal({ jurnal }: DaftarJurnalProps) {
   return (
     <div>
       {jurnalTerbaru.map((j) => (
-        <JurnalCard key={j.id} jurnal={j} />
+        <JurnalCard 
+          key={j.id} 
+          jurnal={j} 
+          onHapus={onHapus} 
+          onUbahStatus={onUbahStatus} 
+        />
       ))}
     </div>
   );

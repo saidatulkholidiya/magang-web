@@ -86,7 +86,11 @@ export function GaleriKomponen() {
         <h2>JurnalCard</h2>
         <div style={{ display: "grid", gap: 12 }}>
           {/* Cukup tampilkan JurnalCard statis dari data jurnalTiruan */}
-          <JurnalCard jurnal={jurnalTiruan[0]} />
+          <JurnalCard 
+  jurnal={jurnalTiruan[0]} 
+  onHapus={(id) => console.log("Hapus di Galeri:", id)} 
+  onUbahStatus={(id, status) => console.log("Ubah di Galeri:", id, status)} 
+/>
         </div>
       </section>
 

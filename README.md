@@ -174,3 +174,17 @@ Deskripsi singkat: Halaman statis untuk menampilkan daftar jurnal harian peserta
 - **Props** adalah data yang dikirim dari luar (induk ke anak) dan bersifat *read-only* (tidak boleh diubah). Contoh di aplikasi jurnal: data `jurnal` yang dikirim ke komponen `JurnalCard`.
 - **State** adalah data internal komponen yang bisa berubah dan memicu render ulang. Contoh: status `bukaDetail` (boolean) untuk menyembunyikan/menampilkan detail jurnal.
 - **Data Turunan** adalah nilai yang dihitung dari Props atau State, bukan disimpan sebagai state baru. Contoh: menghitung total jurnal yang belum direview dari daftar `jurnal`.
+
+## Jawaban Soal 5 (Selasa Minggu ke 18 - Bug Key Indeks)
+Bug key indeks terjadi karena React melacak identitas elemen berdasarkan `key`. Saat item pertama dihapus, indeks item kedua akan bergeser (dari 1 menjadi 0). React mengira elemen dengan key 0 adalah elemen yang sama seperti sebelumnya, sehingga isi input (state internal) ikut tertukar ke item yang salah. Dengan menggunakan key yang stabil (seperti ID atau nama unik), React tahu persis elemen mana yang harus dihapus dan mana yang dipertahankan. Ini membuktikan bahwa key indeks sangat berbahaya jika daftar bisa berubah urutan atau dihapus.
+
+## Jawaban Soal 8 (Aliran Data)
+Berikut adalah gambar pohon komponen aplikasi Jurnal Magang:
+App (Pemilik State Jurnal)
+ ├── RingkasanJurnal (menerima props jurnal)
+ └── DaftarJurnal (menerima props jurnal, onHapus, onUbahStatus)
+      └── JurnalCard (menerima props jurnal, onHapus, onUbahStatus)
+
+Data mengalir ke bawah (dari App ke anak-anaknya) melalui props.
+Peristiwa (event) mengalir ke atas melalui fungsi callback (onHapus, onUbahStatus). 
+Induk (App) yang memegang kendali untuk mengubah state, lalu anak-anaknya akan otomatis menerima data terbaru.
