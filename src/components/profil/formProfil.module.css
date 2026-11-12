@@ -1,0 +1,39 @@
+.form {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+}
+
+.kolom {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: var(--jari-jari);
+  font: inherit;
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--warna-utama);
+  outline-offset: 1px;
+}
+
+.inputError {
+  border-color: var(--warna-bahaya);
+}
+
+.error {
+  margin: 0;
+  color: var(--warna-bahaya);
+  font-size: 0.875rem;
+}
+
