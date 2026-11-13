@@ -32,3 +32,51 @@ main h1 {
   margin: 0 0 0.5rem;
   font-size: 1.05rem;
 }
+
+.alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.alat label {
+  display: grid;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.alat select,
+.alat input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: var(--jari-jari);
+  font: inherit;
+}
+
+.form-jurnal {
+  display: grid;
+  gap: 16px;
+}
+
+.form-jurnal label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.form-jurnal textarea,
+.form-jurnal input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: var(--jari-jari);
+  font: inherit;
+}
+
+.form-jurnal textarea {
+  min-height: 88px;
+  resize: vertical;
+}

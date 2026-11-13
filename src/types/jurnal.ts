@@ -1,5 +1,6 @@
 export type StatusReview = "belum" | "sudah";
 export type JurnalBaru = Pick<Jurnal, "kegiatan" | "hambatan" | "linkCommit">;
+export type FilterStatus = "semua" | StatusReview;
 export interface Lampiran {
   url: string;
   keterangan?: string;

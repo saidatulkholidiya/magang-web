@@ -1,7 +1,10 @@
 .form {
   display: grid;
   gap: 16px;
-  max-width: 480px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--jari-jari);
 }
 
 .kolom {
@@ -36,4 +39,3 @@
   color: var(--warna-bahaya);
   font-size: 0.875rem;
 }
-

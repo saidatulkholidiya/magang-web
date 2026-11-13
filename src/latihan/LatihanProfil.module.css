@@ -1,0 +1,14 @@
+.bagian {
+  margin: 40px 0 48px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.bagian h2 {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+}
+
+.hasil {
+  margin-top: 16px;
+}
