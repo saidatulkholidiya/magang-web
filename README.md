@@ -1,4 +1,7 @@
-# Magang Web (Frontend)
+# Magang Web 
+Aplikasi jurnal magang interaktif tanpa API. Peserta menulis jurnal harian, mentor mereview
+dengan catatan, dan semua data tetap ada setelah halaman dimuat ulang.
+Dibuat dengan React, TypeScript (strict), Vite, dan CSS Modules.
 
 ## Jawaban Soal 8 (Minggu 17 - Senin)
 
@@ -158,12 +161,21 @@ Deskripsi singkat: Halaman statis untuk menampilkan daftar jurnal harian peserta
 3. Buka `http://localhost:5173`
 
 ## Struktur Folder
-- `src/components/ui`: Komponen UI generik (Button, Alert, Kartu, Badge) yang tidak tahu tentang domain jurnal.
-- `src/components/jurnal`: Komponen spesifik untuk jurnal (DaftarJurnal, JurnalCard, dll).
-- `src/components/layout`: Komponen kerangka halaman (Header).
-- `src/data`: Data tiruan statis.
-- `src/types`: Definisi tipe TypeScript.
-- `src/utils`: Fungsi bantuan (format tanggal, cx).
+src/
+  components/
+    ui/        Button, Alert, Kartu, Badge (generik, tidak tahu soal jurnal)
+    jurnal/    FormJurnal, DaftarJurnal, JurnalCard, PanelReview, RingkasanJurnal,
+               StatusBadge, PencarianJurnal
+    layout/    Header, SaklarPeran
+    profil/    FormProfil (latihan form kedua)
+  hooks/       useLocalStorage, usePenundaan
+  data/        jurnalTiruan
+  pages/       GaleriKomponen
+  types/       peserta, jurnal
+  utils/       cx, format, validasiJurnal, validasiReview, validasiProfil, guard, daftar
+  App.tsx      menyusun halaman dan memegang state utama
+  main.tsx
+  index.css    variabel desain
 
 ## 3 Keputusan Desain
 1. **Pemisahan UI dan Jurnal**: Komponen di `components/ui` (seperti Button) dibuat sangat generik agar bisa dipakai ulang di halaman mana pun. Komponen di `components/jurnal` khusus menangani logika tampilan jurnal.
@@ -172,7 +184,16 @@ Deskripsi singkat: Halaman statis untuk menampilkan daftar jurnal harian peserta
 
 ## Jawaban Soal 9 (Senin, Minggu 18)
 - **Props** adalah data yang dikirim dari luar (induk ke anak) dan bersifat *read-only* (tidak boleh diubah). Contoh di aplikasi jurnal: data `jurnal` yang dikirim ke komponen `JurnalCard`.
-- **State** adalah data internal komponen yang bisa berubah dan memicu render ulang. Contoh: status `bukaDetail` (boolean) untuk menyembunyikan/menampilkan detail jurnal.
+- **State** adalah data internal komponen yang bisa berubah dan memicu render ulang. Contoh: status `buka### Kamis: hasil eksperimen
+- **Anti-pola (hasil filter disimpan sebagai state `jurnalTampil`).** Jurnal baru tidak muncul di daftar dan
+  jurnal yang dihapus tetap tampil, padahal ringkasan berubah. Filter dan pencarian juga berhenti bekerja.
+  Penyebabnya, `useState(jurnal)` hanya memakai nilai awal sekali, sehingga ada dua sumber data yang tidak sinkron.
+- **Cleanup dan StrictMode.** Di mode development, urutan log efek adalah `pasang`, `lepas`, `pasang`. React
+  sengaja memasang-melepas-memasang untuk menguji cleanup. Tanpa cleanup, satu kali menekan `/`
+  menjalankan handler dua kali karena dua pendengar menempel di `window`.
+- **Type guard versus `as`.** Dengan type guard, isi localStorage `{"a":1}` ditolak dan aplikasi memakai
+  data awal. Saat guard sengaja diganti `as T`, halaman menjadi putih dengan error
+  `jurnal.filter is not a function`, karena `as` hanya mengaku tipenya benar tanpa memeriksa.Detail` (boolean) untuk menyembunyikan/menampilkan detail jurnal.
 - **Data Turunan** adalah nilai yang dihitung dari Props atau State, bukan disimpan sebagai state baru. Contoh: menghitung total jurnal yang belum direview dari daftar `jurnal`.
 
 ## Jawaban Soal 5 (Selasa Minggu ke 18 - Bug Key Indeks)
@@ -200,3 +221,131 @@ Fitur `[name]: value` di JavaScript memungkinkan kita menggunakan nilai dari atr
 
 ### Soal 7: Keamanan XSS
 React secara otomatis melakukan *escaping* pada teks yang ditampilkan lewat kurung kurawal `{}`. Jika pengguna mengetik `<script>alert(1)</script>`, React akan menampilkannya sebagai teks mentah, bukan menjalankannya. Ini melindungi aplikasi dari serangan XSS secara bawaan. Kita tidak boleh menggunakan `dangerouslySetInnerHTML` untuk data dari pengguna karena itu akan mematikan perlindungan ini.
+
+### Kamis: hasil eksperimen
+- **Anti-pola (hasil filter disimpan sebagai state `jurnalTampil`).** Jurnal baru tidak muncul di daftar dan
+  jurnal yang dihapus tetap tampil, padahal ringkasan berubah. Filter dan pencarian juga berhenti bekerja.
+  Penyebabnya, `useState(jurnal)` hanya memakai nilai awal sekali, sehingga ada dua sumber data yang tidak sinkron.
+- **Cleanup dan StrictMode.** Di mode development, urutan log efek adalah `pasang`, `lepas`, `pasang`. React
+  sengaja memasang-melepas-memasang untuk menguji cleanup. Tanpa cleanup, satu kali menekan `/`
+  menjalankan handler dua kali karena dua pendengar menempel di `window`.
+- **Type guard versus `as`.** Dengan type guard, isi localStorage `{"a":1}` ditolak dan aplikasi memakai
+  data awal. Saat guard sengaja diganti `as T`, halaman menjadi putih dengan error
+  `jurnal.filter is not a function`, karena `as` hanya mengaku tipenya benar tanpa memeriksa.
+
+## Catatan Hari Jum'at (Minggu 18)
+
+## Cara menjalankan
+```bash
+npm install
+npm run dev
+```
+Buka `http://localhost:5173`. Untuk pengecekan: `npm run lint` dan `npm run build`.
+
+## Fitur
+1. Tambah jurnal lewat form dengan validasi (kolom opsional kosong menjadi `null`).
+2. Hapus dengan konfirmasi dua langkah ("Yakin? Ya / Batal").
+3. Saklar peran Peserta / Mentor. Di mode mentor, tombol Review membuka panel catatan.
+   Status "sudah" wajib disertai catatan minimal 5 karakter.
+4. Filter status dan pencarian kegiatan (ditunda 300 ms).
+5. Pintasan `/` memfokuskan kolom pencarian.
+6. Ringkasan (total, sudah, belum) dihitung dari data.
+7. Data bertahan setelah reload (localStorage dengan type guard).
+8. Judul tab menampilkan jumlah jurnal yang belum direview.
+9. Dua keadaan kosong: belum ada jurnal, dan hasil filter kosong.
+
+### Mencoba mode mentor
+1. Pilih **Mentor** pada kotak "Peran" di bawah header.
+2. Klik **Review** pada sebuah jurnal.
+3. Tulis catatan lalu klik "Tandai sudah direview" (minimal 5 karakter) atau "Kembalikan ke belum".
+
+## Struktur folder
+
+```
+src/
+├── components/
+│   ├── ui/          Button, Alert, Kartu, Badge      (generik, tidak tahu soal jurnal)
+│   ├── jurnal/      FormJurnal, DaftarJurnal, JurnalCard, PanelReview,
+│   │                RingkasanJurnal, StatusBadge, PencarianJurnal
+│   ├── layout/      Header, SaklarPeran
+│   ├── profil/      FormProfil                          (latihan Rabu)
+│   └── HasilJurnal.tsx                                  (latihan discriminated union)
+├── hooks/           useLocalStorage, usePenundaan
+├── data/            jurnalTiruan
+├── pages/           GaleriKomponen                      (bonus: semua varian komponen UI)
+├── latihan/         LatihanProfil
+├── types/           peserta, jurnal
+├── utils/           cx, format, validasiJurnal, validasiReview, validasiProfil, guard, daftar
+├── App.tsx
+└── main.tsx
+```
+
+## Aliran data
+
+Data turun lewat props, peristiwa naik lewat callback.
+
+```
+App  (state: jurnal, role, filter, kataKunci)
+ ├─ Header                 ← judul, namaPeserta
+ ├─ SaklarPeran            ← role ↓      onUbah ↑ (setRole)
+ ├─ RingkasanJurnal        ← jurnal ↓
+ ├─ FormJurnal             ← onTambah ↑
+ ├─ PencarianJurnal        ← nilai ↓     onUbah ↑ (setKataKunci)
+ └─ DaftarJurnal           ← jurnal (sudah difilter) ↓, role ↓, pesanKosong ↓
+      │                       onHapus ↑, onUbahReview ↑
+      └─ JurnalCard        (state lokal: bukaDetail, konfirmasiHapus, bukaReview)
+           ├─ StatusBadge
+           ├─ Button
+           └─ PanelReview  (state lokal: catatan, error)  → onSimpan ↑
+```
+
+## Tiga keputusan desain
+
+**1. State `jurnal` dan `role` diangkat ke `App` (lifting state up).**
+`RingkasanJurnal`, `DaftarJurnal`, dan judul tab membutuhkan data yang sama, dan `role` dipakai oleh saklar
+sekaligus setiap kartu. Kalau tiap komponen menyimpan salinan sendiri, angkanya bisa tidak sinkron.
+Dengan satu pemilik di `App`, semua komponen otomatis menerima data terbaru setelah state diubah.
+
+**2. Konfirmasi hapus dan panel review adalah state lokal di `JurnalCard`.**
+`konfirmasiHapus`, `bukaReview`, dan `bukaDetail` hanya relevan untuk satu kartu. Komponen lain tidak perlu
+tahu kartu mana yang sedang menunggu konfirmasi. Keadaan itu juga tidak perlu disimpan ke localStorage.
+Karena `key` memakai `id`, state tiap kartu tidak bergeser saat kartu lain dihapus.
+
+**3. Filter, pencarian, urutan, ringkasan, dan pesan kosong dihitung saat render, bukan disimpan sebagai state.**
+Semuanya bisa dihitung dari `jurnal`, `filter`, dan `kataKunci`. Menyimpannya sebagai state membuat dua
+sumber kebenaran, dan satu pembaruan yang terlupa menghasilkan data basi (lihat hasil eksperimen anti-pola
+di bawah). Menghitung ulang saat render selalu sinkron tanpa perlu diingat.
+
+## Hasil "Coba Rusakkan Formulirku" (pada aplikasiku sendiri)
+
+| # | Input | Yang diharapkan | Hasil | Status |
+|---|---|---|---|---|
+| 1 | Kegiatan hanya spasi | Ditolak | Ditolak, "minimal 10 karakter" | Ditolak benar |
+| 2 | Kegiatan 9 karakter / 10 karakter | Ditolak / lolos | Ditolak / tersimpan | Sesuai |
+| 3 | Kegiatan 2001 karakter | Ditolak | Ditolak, "maksimal 2000 karakter" | Ditolak benar |
+| 4 | Link `javascript:alert(1)` | Ditolak | Ditolak, tidak ada alert | Ditolak benar |
+| 5 | Link `bukan url` / link kosong | Ditolak / lolos (disimpan `null`) | Ditolak / tersimpan sebagai `null` | Sesuai |
+| 6 | Kegiatan `<script>alert(1)</script>` | Diterima, tampil sebagai teks | Tampil sebagai teks, tidak ada skrip berjalan | Diterima benar |
+| 7 | Emoji dan huruf non-Latin | Tampil benar | Tampil benar | Diterima benar |
+| 8 | Enter di kolom link, lalu klik Simpan | Tidak dobel | Satu jurnal, klik kedua ditolak validasi | Sesuai |
+| 9 | Mentor: "sudah" tanpa catatan / catatan 4 karakter | Ditolak / ditolak | Ditolak / ditolak | Ditolak benar |
+| 10 | Hapus lalu Batal | Data tetap ada | Data tetap ada | Sesuai |
+| 11 | localStorage berisi teks bukan JSON | Jalan dengan data awal | Jalan dengan 6 jurnal data awal | Sesuai |
+| 12 | localStorage berisi `{"a":1}` | Jalan, tidak crash | Jalan dengan data awal, tidak crash | Sesuai |
+
+Catatan: validasi panjang memakai `.length`, yang menghitung sebagian emoji sebagai dua karakter,
+jadi batas 10 dan 2000 sedikit bergeser untuk teks beremoji.
+
+### Nomor 12: kenapa type guard menyelamatkan aplikasi?
+`JSON.parse('{"a":1}')` berhasil, jadi `try/catch` tidak menangkap apa-apa. Tetapi hasilnya objek, bukan
+array. Tanpa pemeriksaan, `jurnal.filter` di `App` akan crash karena objek tidak punya `.filter`.
+`adalahDaftarJurnal` memeriksa `Array.isArray` dan field kunci tiap item, menolak data itu, lalu
+`useLocalStorage` memakai data awal. Tipe TypeScript hilang saat aplikasi berjalan (*type erasure*), jadi
+data dari luar hanya bisa dipercaya setelah diperiksa dengan kode biasa.
+
+### Nomor 6: kenapa `<script>` yang diterima tidak otomatis berbahaya, dan siapa yang bertanggung jawab?
+Validasi klien hanya memeriksa panjang dan format, bukan "isi berbahaya", jadi teks itu lolos. Itu tidak
+berbahaya karena React me-escape teks yang dirender lewat `{}`, sehingga tampil sebagai teks. Lapisan
+yang melindungi dari XSS adalah mekanisme escape bawaan React saat render, ditambah tidak dipakainya
+`dangerouslySetInnerHTML`. Validasi klien bukan pengaman: siapa pun bisa melewati form dan memanggil API
+langsung, jadi keamanan sesungguhnya ada di server.

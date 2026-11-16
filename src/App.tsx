@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Header from "./components/layout/Header";
+import { SaklarPeran } from "./components/layout/SaklarPeran"; // BARU
 import RingkasanJurnal from "./components/jurnal/RingkasanJurnal";
 import DaftarJurnal from "./components/jurnal/DaftarJurnal";
 import { FormJurnal } from "./components/jurnal/FormJurnal";
@@ -7,10 +8,10 @@ import { PencarianJurnal } from "./components/jurnal/PencarianJurnal";
 import { profilPeserta, jurnalTiruan as dataAwal } from "./data/jurnalTiruan";
 import type { FilterStatus, Jurnal, StatusReview, JurnalBaru } from "./types/jurnal";
 import "./App.css";
-import { LatihanProfil } from "./latihan/LatihanProfil";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { adalahDaftarJurnal, adalahFilterStatus } from "./utils/guard";
 import { usePenundaan } from "./hooks/usePenundaan";
+import type { role } from "./types/peserta";
 
 export default function App() {
   const [jurnal, setJurnal] = useLocalStorage<Jurnal[]>(
@@ -18,18 +19,32 @@ export default function App() {
     dataAwal,
     adalahDaftarJurnal
   );
+  const [role, setRole] = useState<role>("peserta");
   const [filter, setFilter] = useState<FilterStatus>("semua");
   const [kataKunci, setKataKunci] = useState("");
   const kataKunciTunda = usePenundaan(kataKunci, 300);
+
+  // DATA TURUNAN: dihitung setiap render, BUKAN state
+  const belumDireview = jurnal.filter((j) => j.statusReview === "belum").length; // BARU
+
+  const tampil = jurnal
+    .filter((j) => filter === "semua" || j.statusReview === filter)
+    .filter((j) => j.kegiatan.toLowerCase().includes(kataKunciTunda.trim().toLowerCase()));
+
   useEffect(() => {
-    document.title = `Jurnal Magang (${jurnal.length})`;
-  }, [jurnal.length]);
+    document.title = `Jurnal Magang (${belumDireview} belum direview)`; // UBAH
+  }, [belumDireview]);
+
+  const pesanKosong =
+    jurnal.length === 0
+      ? "Belum ada jurnal. Tulis jurnal pertamamu lewat formulir di atas."
+      : "Tidak ada jurnal yang cocok dengan filter atau pencarian.";
 
   function hapusJurnal(id: number) {
     setJurnal((daftar) => daftar.filter((j) => j.id !== id));
   }
 
-  function ubahStatus(id: number, status: StatusReview) {
+  function ubahReview(id: number, status: StatusReview) {
     setJurnal((daftar) =>
       daftar.map((j) => (j.id === id ? { ...j, statusReview: status } : j))
     );
@@ -48,16 +63,10 @@ export default function App() {
     setJurnal((daftar) => [baru, ...daftar]);
   }
 
-  // DATA TURUNAN: dihitung setiap render, BUKAN state
-  const tampil = jurnal
-    .filter((j) => filter === "semua" || j.statusReview === filter)
-    .filter((j) => j.kegiatan.toLowerCase().includes(kataKunciTunda.trim().toLowerCase()));
-
-  const terurut = [...tampil].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
   return (
     <main>
       <Header judul="Jurnal Magang" namaPeserta={profilPeserta.nama} />
+      <SaklarPeran role={role} onUbah={setRole} /> 
       <RingkasanJurnal jurnal={jurnal} />
       <FormJurnal onTambah={tambahJurnal} />
 
@@ -80,11 +89,12 @@ export default function App() {
       </div>
 
       <DaftarJurnal
-        jurnal={terurut}
+        jurnal={tampil}
+        role={role} 
+        pesanKosong={pesanKosong}
         onHapus={hapusJurnal}
-        onUbahStatus={ubahStatus}
+        onUbahReview={ubahReview}
       />
-      <LatihanProfil />
     </main>
   );
 }

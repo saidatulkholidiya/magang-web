@@ -5,7 +5,7 @@ export default function Snapshot() {
 
   function tambahTigaSalah() {
     setJumlah(jumlah + 1); // 0 + 1 = 1
-    console.log("Nilai di dalam fungsi:", jumlah);
+    // console.log("Nilai di dalam fungsi:", jumlah);
     setJumlah(jumlah + 1); // 0 + 1 = 1
     setJumlah(jumlah + 1); // 0 + 1 = 1
     // Hasil akhir: 1 (bukan 3), karena `jumlah` di render ini masih 0.

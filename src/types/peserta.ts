@@ -1,3 +1,4 @@
+export type role = "peserta" | "mentor";
 export interface Peserta {
   id: number;
   nama: string;

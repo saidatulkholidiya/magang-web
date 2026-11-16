@@ -15,3 +15,18 @@
 .commit { color: var(--warna-utama); text-decoration: none; }
 .commit:hover { text-decoration: underline; }
 .lampiran { color: #666; }
+.konfirmasi {
+  align-self: center;
+  font-weight: 600;
+}
+.aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.konfirmasi {
+  font-weight: 600;
+}

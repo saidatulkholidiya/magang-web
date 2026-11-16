@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "../components/ui/Button";
+import styles from "./Latihan.module.css";
 
 export default function NestedState() {
   const [profil, setProfil] = useState({
@@ -15,7 +16,7 @@ export default function NestedState() {
   }
 
   return (
-    <div style={{ padding: "20px", border: "1px solid #ccc", margin: "20px" }}>
+    <div className={styles.kotakBesar}>
       <h3>Uji Nested State</h3>
       <p>Nama: {profil.nama}</p>
       <p>Kota: {profil.alamat.kota}</p>

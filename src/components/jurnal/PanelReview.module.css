@@ -1,0 +1,40 @@
+.panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--jari-jari);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 80px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: var(--jari-jari);
+  font: inherit;
+  resize: vertical;
+}
+
+.inputError {
+  border-color: var(--warna-bahaya);
+}
+
+.error {
+  margin: 0;
+  color: var(--warna-bahaya);
+  font-size: 0.875rem;
+}
+
+.aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
