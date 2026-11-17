@@ -349,3 +349,41 @@ berbahaya karena React me-escape teks yang dirender lewat `{}`, sehingga tampil 
 yang melindungi dari XSS adalah mekanisme escape bawaan React saat render, ditambah tidak dipakainya
 `dangerouslySetInnerHTML`. Validasi klien bukan pengaman: siapa pun bisa melewati form dan memanggil API
 langsung, jadi keamanan sesungguhnya ada di server.
+
+## Minggu 19, Senin — Menyambungkan Frontend dan Backend
+
+### Soal 2: Jawaban tentang CORS
+Origin adalah gabungan dari skema, host, dan port, sehingga `http://localhost:5173` (frontend) dan `http://localhost:3000` (backend) dianggap sebagai dua origin yang berbeda. Browser memblokir skrip dari satu origin untuk membaca jawaban dari origin lain demi alasan keamanan, kecuali server mengizinkannya melalui header `Access-Control-Allow-Origin`. Izin ini diatur di sisi server backend melalui konfigurasi `CORS_ORIGINS`. Yang menegakkan aturan ini adalah browser (bukan server), terbukti dari log terminal backend yang tetap mencatat permintaan masuk meskipun browser menampilkan error CORS. Alat seperti `curl` atau Swagger tidak terkena blokir ini karena mereka bukan browser, sehingga tidak memiliki mekanisme "satpam" *Same-Origin Policy*.
+
+### Soal 3: Header Preflight (OPTIONS)
+Saat mengirim permintaan yang tidak sederhana (membawa header `Authorization`), browser mengirim preflight request (OPTIONS) terlebih dahulu.
+**Tiga Request Headers (dari Browser):**
+1. `Origin`: `http://localhost:5173`
+2. `Access-Control-Request-Method`: `GET`
+3. `Access-Control-Request-Headers`: `authorization`
+
+**Tiga Response Headers (dari Server):**
+1. `Access-Control-Allow-Origin`: `http://localhost:5173`
+2. `Access-Control-Allow-Methods`: `GET, POST, PUT, DELETE, PATCH, OPTIONS` (atau sejenisnya)
+3. `Access-Control-Allow-Headers`: `Content-Type, Authorization` (atau sejenisnya)
+
+### Soal 5: Variabel Environment & Keamanan
+Tabel tiga keadaan pengujian `BASE_URL`:
+| Keadaan | Cara | Hasil di Layar |
+|---|---|---|
+| a. Tidak ada file | Tidak ada `.env` | `BASE_URL: "/api/v1"` |
+| b. Alamat penuh | `VITE_API_URL=http://localhost:3000/api/v1` | `BASE_URL: "http://localhost:3000/api/v1"` |
+| c. String kosong | `VITE_API_URL=` | `BASE_URL: "/api/v1"` (berkat operator `\|\|`) |
+
+**Alasan rahasia tidak boleh di `VITE_`:**
+Variabel environment yang diawali `VITE_` akan tertanam langsung ke dalam kode JavaScript saat proses *build*. Ini sudah dibuktikan dengan mencari teks rahasia di folder `dist` dan teks tersebut muncul. Jadi, variabel `VITE_` hanya boleh digunakan untuk konfigurasi publik, bukan untuk menyimpan *password*, *API Key*, atau *JWT Secret*.
+
+### Soal 6: Temuan `fetch` 401
+Saat memanggil `fetch("/api/v1/me")` tanpa token, server membalas dengan status `401 (Unauthorized)`. Meskipun demikian, karena respons ini adalah "jawaban dari server" dan bukan kegagalan jaringan, `fetch` tetap menganggapnya sebagai keberhasilan. Ini terbukti dari log Console yang menampilkan `ok? false status: 401` dan melanjutkan ke `.then()` kedua, tanpa pernah memicu blok `.catch()`. 
+
+### Soal 7: Status Error Sebelum & Sesudah `Content-Type`
+- **Sebelum ditambahkan header:** Server merespons dengan status `422 Unprocessable Entity` dan pesan error bahwa *field* wajib kosong. Ini terjadi karena Express 5 mengabaikan *body* yang tidak berlabel `application/json`, sehingga `req.body` bernilai `undefined`.
+- **Sesudah ditambahkan header `Content-Type: application/json`:** Server merespons dengan status `200 OK` dan memberikan `accessToken`.
+
+### Soal 8: Proxy Vite vs Nginx
+Kode frontend selalu memanggil alamat relatif seperti `/api/v1/...` dan tidak pernah menuliskan alamat server secara langsung. Alamat relatif ini otomatis menunjuk ke origin tempat halaman itu dibuka. Di *development*, Vite meneruskan permintaan `/api` tersebut ke backend lokal (`localhost:3000`). Di produksi, peran Vite digantikan oleh Nginx yang juga meneruskan `/api` ke *container* API. Karena yang berubah hanya perantara yang meneruskan (dari Vite ke Nginx), kode frontend tidak perlu diubah sama sekali. Browser selalu melihat semua permintaan berasal dari satu origin yang sama, sehingga masalah CORS tidak pernah terjadi.

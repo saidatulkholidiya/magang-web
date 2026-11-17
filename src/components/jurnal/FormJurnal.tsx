@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { ChangeEventHandler, FormEventHandler } from "react";
 import { Button } from "../ui/Button";
 import { cx } from "../../utils/cx";
@@ -17,6 +17,11 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
   const [nilai, setNilai] = useState<FormJurnalState>(NILAI_AWAL);
   const [errors, setErrors] = useState<FormJurnalErrors>({});
 
+  // Pegangan ke tiap kolom, supaya fokus bisa dipindah ke kolom pertama yang salah
+  const kegiatanRef = useRef<HTMLTextAreaElement>(null);
+  const hambatanRef = useRef<HTMLTextAreaElement>(null);
+  const linkCommitRef = useRef<HTMLInputElement>(null);
+
   const ubah: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
     const { name, value } = e.target;
     setNilai((sebelumnya) => ({ ...sebelumnya, [name]: value }));
@@ -28,7 +33,20 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
 
     const hasil = validasiFormJurnal(nilai);
     setErrors(hasil);
-    if (Object.keys(hasil).length > 0) return;
+
+    // Fokus ke kolom pertama yang salah, urut dari atas ke bawah
+    if (hasil.kegiatan) {
+      kegiatanRef.current?.focus();
+      return;
+    }
+    if (hasil.hambatan) {
+      hambatanRef.current?.focus();
+      return;
+    }
+    if (hasil.linkCommit) {
+      linkCommitRef.current?.focus();
+      return;
+    }
 
     onTambah({
       kegiatan: nilai.kegiatan.trim(),
@@ -45,6 +63,7 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
         <textarea
           id="kegiatan"
           name="kegiatan"
+          ref={kegiatanRef}
           value={nilai.kegiatan}
           onChange={ubah}
           className={cx(styles.input, errors.kegiatan && styles.inputError)}
@@ -61,11 +80,16 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
         <textarea
           id="hambatan"
           name="hambatan"
+          ref={hambatanRef}
           value={nilai.hambatan}
           onChange={ubah}
           className={cx(styles.input, errors.hambatan && styles.inputError)}
+          aria-invalid={errors.hambatan ? true : undefined}
+          aria-describedby={errors.hambatan ? "hambatan-error" : undefined}
         />
-        {errors.hambatan && <p role="alert" className={styles.error}>{errors.hambatan}</p>}
+        {errors.hambatan && (
+          <p id="hambatan-error" role="alert" className={styles.error}>{errors.hambatan}</p>
+        )}
       </div>
 
       <div className={styles.kolom}>
@@ -73,11 +97,16 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
         <input
           id="linkCommit"
           name="linkCommit"
+          ref={linkCommitRef}
           value={nilai.linkCommit}
           onChange={ubah}
           className={cx(styles.input, errors.linkCommit && styles.inputError)}
+          aria-invalid={errors.linkCommit ? true : undefined}
+          aria-describedby={errors.linkCommit ? "linkCommit-error" : undefined}
         />
-        {errors.linkCommit && <p role="alert" className={styles.error}>{errors.linkCommit}</p>}
+        {errors.linkCommit && (
+          <p id="linkCommit-error" role="alert" className={styles.error}>{errors.linkCommit}</p>
+        )}
       </div>
 
       <Button type="submit">Simpan Jurnal</Button>
