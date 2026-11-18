@@ -4,6 +4,11 @@
  */
 
 
+/** OneOf type helpers */
+type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
+type XOR<T, U> = (T | U) extends object ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
+type OneOf<T extends any[]> = T extends [infer Only] ? Only : T extends [infer A, infer B, ...infer Rest] ? OneOf<[XOR<A, B>, ...Rest]> : never;
+
 export interface paths {
   "/stats": {
     /** Ambil data statistik */
@@ -459,21 +464,236 @@ export interface components {
   schemas: {
     PaginationMeta: {
       /** @example 1 */
-      page?: number;
+      page: number;
       /** @example 10 */
-      limit?: number;
+      limit: number;
       /** @example 42 */
-      total?: number;
+      total: number;
       /** @example 5 */
-      totalPages?: number;
+      totalPages: number;
       /** @example true */
-      hasNext?: boolean;
+      hasNext: boolean;
       /** @example false */
-      hasPrev?: boolean;
+      hasPrev: boolean;
     };
-    responses: unknown;
+    /** @description Hanya boleh berisi nama, sekolah, atau telepon. Minimal satu field harus diisi. */
+    UpdateProfilRequest: {
+      nama?: string;
+      sekolah?: string;
+      telepon?: string;
+    };
+    RefreshRequest: {
+      refreshToken: string;
+    };
+    FieldError: {
+      /** @example email */
+      field: string;
+      /** @example Format email tidak valid */
+      pesan: string;
+    };
+    ErrorResponse: {
+      /** @example false */
+      sukses: boolean;
+      error: {
+        /** @enum {string} */
+        kode: "VALIDATION_ERROR" | "INVALID_JSON" | "UNAUTHORIZED" | "TOKEN_EXPIRED" | "INVALID_TOKEN" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "PAYLOAD_TOO_LARGE" | "INTERNAL_ERROR";
+        pesan: string;
+        detail?: components["schemas"]["FieldError"][];
+      };
+      /** Format: uuid */
+      requestId?: string;
+    };
+    Peserta: {
+      /** @example 1 */
+      id: number;
+      /** @example Budi Santoso */
+      nama: string;
+      /** @example SMK 5 Malang */
+      sekolah: string;
+      /**
+       * Format: email
+       * @example budi@mail.com
+       */
+      email: string;
+      /** @example 1 */
+      fase: number;
+      /** @enum {string} */
+      status: "aktif" | "lulus" | "berhenti";
+      /** @enum {string} */
+      role: "peserta" | "mentor";
+      /** @example 081234567890 */
+      telepon?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+    };
+    RegisterRequest: {
+      nama: string;
+      sekolah: string;
+      /** Format: email */
+      email: string;
+      /** Format: password */
+      password: string;
+      /** Format: password */
+      konfirmasiPassword: string;
+    };
+    LoginRequest: {
+      /** Format: email */
+      email: string;
+      /** Format: password */
+      password: string;
+    };
+    PesertaResponse: {
+      /** @example true */
+      sukses?: boolean;
+      /** @example Berhasil */
+      pesan?: string;
+      data?: components["schemas"]["Peserta"];
+    };
+    PesertaListResponse: {
+      /** @example true */
+      sukses?: boolean;
+      /** @example Berhasil */
+      pesan?: string;
+      data?: components["schemas"]["Peserta"][];
+      meta?: components["schemas"]["PaginationMeta"];
+    };
+    LoginResponse: {
+      /** @example true */
+      sukses?: boolean;
+      /** @example Berhasil */
+      pesan?: string;
+      data?: {
+        accessToken: string;
+        refreshToken: string;
+        peserta: components["schemas"]["Peserta"];
+      };
+    };
+    Lampiran: {
+      /**
+       * Format: uri
+       * @example https://contoh.com/ss1.png
+       */
+      url: string;
+      /** @example Tangkapan layar */
+      keterangan?: string;
+    };
+    Jurnal: {
+      /** @example 1 */
+      id: number;
+      /** @example 1 */
+      pesertaId: number;
+      /** @example Belajar Swagger UI */
+      kegiatan: string;
+      /** @example Sempat error */
+      hambatan?: string | null;
+      /**
+       * Format: uri
+       * @example https://github.com/...
+       */
+      linkCommit?: string | null;
+      /** @enum {string} */
+      statusReview: "belum" | "sudah";
+      catatanMentor?: string | null;
+      /** Format: date-time */
+      createdAt: string;
+      lampiran?: components["schemas"]["Lampiran"][];
+    };
+    CreateJurnalRequest: {
+      /** @example Belajar Swagger UI */
+      kegiatan: string;
+      hambatan?: string;
+      /** Format: uri */
+      linkCommit?: string;
+      lampiran?: components["schemas"]["Lampiran"][];
+    };
+    UpdateJurnalRequest: {
+      kegiatan?: string;
+      hambatan?: string;
+      /** Format: uri */
+      linkCommit?: string;
+    };
+    ReviewJurnalRequest: OneOf<[{
+      /** @enum {string} */
+      statusReview: "sudah";
+      /** @example Sudah bagus, lanjutkan. */
+      catatan: string;
+    }, {
+      /** @enum {string} */
+      statusReview: "belum";
+      catatan?: string;
+    }]>;
+    JurnalResponse: {
+      /** @example true */
+      sukses?: boolean;
+      /** @example Berhasil */
+      pesan?: string;
+      data?: components["schemas"]["Jurnal"];
+    };
+    JurnalListResponse: {
+      /** @example true */
+      sukses?: boolean;
+      /** @example Berhasil */
+      pesan?: string;
+      data?: components["schemas"]["Jurnal"][];
+      meta?: components["schemas"]["PaginationMeta"];
+    };
   };
-  responses: never;
+  responses: {
+    /** @description Belum login atau token tidak valid */
+    Unauthorized: {
+      headers: {
+        "X-Request-Id": components["headers"]["XRequestId"];
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Tidak berhak melakukan aksi ini */
+    Forbidden: {
+      headers: {
+        "X-Request-Id": components["headers"]["XRequestId"];
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Data tidak ditemukan */
+    NotFound: {
+      headers: {
+        "X-Request-Id": components["headers"]["XRequestId"];
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Bentrok dengan data yang sudah ada */
+    Conflict: {
+      headers: {
+        "X-Request-Id": components["headers"]["XRequestId"];
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Input tidak lolos validasi */
+    ValidationError: {
+      headers: {
+        "X-Request-Id": components["headers"]["XRequestId"];
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+    /** @description Terlalu banyak percobaan */
+    TooManyRequests: {
+      headers: {
+        "X-Request-Id": components["headers"]["XRequestId"];
+      };
+      content: {
+        "application/json": components["schemas"]["ErrorResponse"];
+      };
+    };
+  };
   parameters: {
     /** @description Nomor halaman (mulai 1) */
     Page?: number;

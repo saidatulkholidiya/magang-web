@@ -6,7 +6,8 @@ import DaftarJurnal from "./components/jurnal/DaftarJurnal";
 import { FormJurnal } from "./components/jurnal/FormJurnal";
 import { PencarianJurnal } from "./components/jurnal/PencarianJurnal";
 import { profilPeserta, jurnalTiruan as dataAwal } from "./data/jurnalTiruan";
-import type { FilterStatus, Jurnal, StatusReview, JurnalBaru } from "./types/jurnal";
+import type { Jurnal, StatusReview, JurnalBaru } from "./api/types";
+import type { FilterStatus } from "./types/jurnal";
 import "./App.css";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { adalahDaftarJurnal, adalahFilterStatus } from "./utils/guard";
@@ -55,7 +56,7 @@ export default function App() {
       id: Math.max(0, ...jurnal.map((j) => j.id)) + 1,
       pesertaId: 1,
       ...data,
-      lampiran: null,
+      lampiran: undefined, // sementara kosong
       statusReview: "belum",
       catatanMentor: null,
       createdAt: new Date().toISOString(),
