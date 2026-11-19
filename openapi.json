@@ -179,10 +179,6 @@
       },
       "FieldError": {
         "type": "object",
-        "required": [
-          "field",
-          "pesan"
-        ],
         "properties": {
           "field": {
             "type": "string",
@@ -196,10 +192,6 @@
       },
       "ErrorResponse": {
         "type": "object",
-        "required": [
-          "sukses",
-          "error"
-        ],
         "properties": {
           "sukses": {
             "type": "boolean",
@@ -474,7 +466,7 @@
             "type": "integer",
             "example": 1
           },
-          "aktivitas": {
+          "kegiatan": {
             "type": "string",
             "example": "Belajar Swagger UI"
           },

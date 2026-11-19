@@ -487,14 +487,14 @@ export interface components {
     };
     FieldError: {
       /** @example email */
-      field: string;
+      field?: string;
       /** @example Format email tidak valid */
-      pesan: string;
+      pesan?: string;
     };
     ErrorResponse: {
       /** @example false */
-      sukses: boolean;
-      error: {
+      sukses?: boolean;
+      error?: {
         /** @enum {string} */
         kode: "VALIDATION_ERROR" | "INVALID_JSON" | "UNAUTHORIZED" | "TOKEN_EXPIRED" | "INVALID_TOKEN" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "PAYLOAD_TOO_LARGE" | "INTERNAL_ERROR";
         pesan: string;
