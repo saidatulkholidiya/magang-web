@@ -1,5 +1,4 @@
-import type { Jurnal } from "../types/jurnal";
-import type { Peserta } from "../types/peserta";
+import type { Jurnal, Peserta } from "../api/types";
 
 export const jurnalTiruan: Jurnal[] = [
   {
@@ -17,11 +16,11 @@ export const jurnalTiruan: Jurnal[] = [
     id: 2,
     pesertaId: 1,
     kegiatan: "Mendokumentasikan endpoint dengan Swagger",
-    hambatan: null,
-    linkCommit: null,
-    lampiran: null,
+    hambatan: undefined,
+    linkCommit: undefined,
+    lampiran: undefined,
     statusReview: "belum",
-    catatanMentor: null,
+    catatanMentor: undefined,
     createdAt: "2026-10-29T02:40:00.000Z",
   },
   {
@@ -39,11 +38,11 @@ export const jurnalTiruan: Jurnal[] = [
     id: 4,
     pesertaId: 1,
     kegiatan: "Belajar TypeORM",
-    hambatan: null,
-    linkCommit: null,
-    lampiran: null,
+    hambatan: undefined,
+    linkCommit: undefined,
+    lampiran: undefined,
     statusReview: "belum",
-    catatanMentor: null,
+    catatanMentor: undefined,
     createdAt: "2026-11-01T04:00:00.000Z",
   },
   {
@@ -51,8 +50,8 @@ export const jurnalTiruan: Jurnal[] = [
     pesertaId: 1,
     kegiatan: "Setup CORS Express",
     hambatan: "Lupa pasang origin",
-    linkCommit: null,
-    lampiran: null,
+    linkCommit: undefined,
+    lampiran: undefined,
     statusReview: "sudah",
     catatanMentor: "Mantap.",
     createdAt: "2026-11-02T05:00:00.000Z",
@@ -61,9 +60,9 @@ export const jurnalTiruan: Jurnal[] = [
     id: 6,
     pesertaId: 1,
     kegiatan: "Refactor controller",
-    hambatan: null,
+    hambatan: undefined,
     linkCommit: "https://github.com/budi/api-magang/commit/ghi789",
-    lampiran: null,
+    lampiran: undefined,
     statusReview: "sudah",
     catatanMentor: "Bagus.",
     createdAt: "2026-11-03T06:00:00.000Z",
@@ -74,8 +73,9 @@ export const profilPeserta: Peserta = {
   id: 1,
   nama: "Saidatul Kholidiya",
   sekolah: "SMKN 6 Malang",
-  email: "saidatul@mail.com",
+  email: "saidatul@gmail.com",
   fase: 1,
   status: "aktif",
   role: "peserta",
+  createdAt: "2026-11-19T00:00:00.000Z",
 };

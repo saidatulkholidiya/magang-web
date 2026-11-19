@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Jurnal } from "../types/jurnal";
+import type { Jurnal } from "../api/types";
 
 export default function TipeState() {
   const [nama, _setNama] = useState<string>("Budi");

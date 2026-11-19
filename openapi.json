@@ -474,7 +474,7 @@
             "type": "integer",
             "example": 1
           },
-          "kegiatan": {
+          "aktivitas": {
             "type": "string",
             "example": "Belajar Swagger UI"
           },

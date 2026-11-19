@@ -1,5 +1,5 @@
-// src/utils/guard.ts
-import type { FilterStatus, Jurnal } from "../types/jurnal";
+import type { FilterStatus } from "../types/jurnal";
+import type { Jurnal } from "../api/types";
 
 export function adalahFilterStatus(x: string): x is FilterStatus {
   return x === "semua" || x === "belum" || x === "sudah";

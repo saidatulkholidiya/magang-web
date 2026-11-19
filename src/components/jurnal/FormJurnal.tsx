@@ -4,7 +4,7 @@ import { Button } from "../ui/Button";
 import { cx } from "../../utils/cx";
 import { validasiFormJurnal } from "../../utils/validasiJurnal";
 import type { FormJurnalErrors, FormJurnalState } from "../../utils/validasiJurnal";
-import type { JurnalBaru } from "../../types/jurnal";
+import type { JurnalBaru } from "../../api/types";
 import styles from "./FormJurnal.module.css";
 
 interface FormJurnalProps {
@@ -50,8 +50,8 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
 
     onTambah({
       kegiatan: nilai.kegiatan.trim(),
-      hambatan: nilai.hambatan.trim() || null,
-      linkCommit: nilai.linkCommit.trim() || null,
+      hambatan: nilai.hambatan.trim() || undefined,
+      linkCommit: nilai.linkCommit.trim() || undefined,
     });
     setNilai(NILAI_AWAL);
   };

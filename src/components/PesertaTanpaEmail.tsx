@@ -1,4 +1,4 @@
-import type { Peserta } from "../types/peserta";
+import type { Peserta } from "../api/types";
 
 type PesertaTanpaEmailProps = Omit<Peserta, "email">;
 
