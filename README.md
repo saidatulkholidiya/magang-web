@@ -387,3 +387,44 @@ Saat memanggil `fetch("/api/v1/me")` tanpa token, server membalas dengan status 
 
 ### Soal 8: Proxy Vite vs Nginx
 Kode frontend selalu memanggil alamat relatif seperti `/api/v1/...` dan tidak pernah menuliskan alamat server secara langsung. Alamat relatif ini otomatis menunjuk ke origin tempat halaman itu dibuka. Di *development*, Vite meneruskan permintaan `/api` tersebut ke backend lokal (`localhost:3000`). Di produksi, peran Vite digantikan oleh Nginx yang juga meneruskan `/api` ke *container* API. Karena yang berubah hanya perantara yang meneruskan (dari Vite ke Nginx), kode frontend tidak perlu diubah sama sekali. Browser selalu melihat semua permintaan berasal dari satu origin yang sama, sehingga masalah CORS tidak pernah terjadi.
+
+## Minggu 19, Selasa: tipe TypeScript dari dokumen OpenAPI
+
+### Alur kerja
+1. Ubah dokumen di backend (`src/docs/components.ts` dan `helpers.ts`).
+2. `npm test` di backend (test dokumen harus hijau).
+3. `npm run docs:export` menghasilkan `docs/openapi.json`.
+4. Salin ke frontend: `copy ..\api-magang\docs\openapi.json openapi.json`.
+5. `npm run api:types` menghasilkan `src/api/schema.d.ts` (file hasil mesin, jangan diedit).
+6. `npm run build`, lalu perbaiki error kompilasi yang muncul.
+
+Alias tipe yang dipakai aplikasi ada di `src/api/types.ts`. Tipe khusus UI (`FilterStatus`) tetap di `src/types`.
+
+### Soal 1: hasil generate
+- `src/api/schema.d.ts` berisi 502 baris.
+- `components.schemas` berisi 18 tipe: `PaginationMeta`, `UpdateProfilRequest`, `RefreshRequest`, `FieldError`, `ErrorResponse`, `Peserta`, `RegisterRequest`, `LoginRequest`, `PesertaResponse`, `PesertaListResponse`, `LoginResponse`, `Lampiran`, `Jurnal`, `CreateJurnalRequest`, `UpdateJurnalRequest`, `ReviewJurnalRequest`, `JurnalResponse`, `JurnalListResponse`.
+- Bagian lain: `paths` (semua endpoint), `parameters`, `headers`, dan `responses` (Unauthorized, Forbidden, NotFound, Conflict, ValidationError, TooManyRequests).
+
+### Soal 2: kelonggaran tipe
+Sebelum `required` ditambahkan, semua properti `Peserta`, `Jurnal`, pembungkus response, `PaginationMeta`, `FieldError`, dan `ErrorResponse` bertanda `?` (opsional). Hanya `Lampiran.url` yang wajib, karena schema-nya sudah punya `required`.
+
+| Tipe | Properti yang bertanda `?` | Selalu ada di response? | Bisa `null`? |
+|---|---|---|---|
+| `Peserta` | id, nama, sekolah, email, fase, status, role, telepon, createdAt | Ya (semua kecuali telepon) | telepon |
+| `Jurnal` | id, pesertaId, kegiatan, hambatan, linkCommit, statusReview, catatanMentor, createdAt, lampiran | Ya | hambatan, linkCommit, catatanMentor |
+| Pembungkus (`...Response`) | sukses, pesan, data, meta | Ya | tidak |
+| `PaginationMeta` | page, limit, total, totalPages, hasNext, hasPrev | Ya | tidak |
+
+Penyebabnya: OpenAPI menganggap properti wajib hanya jika disebut di daftar `required`. Di Minggu 16 schema ditulis tanpa daftar itu, dan `openapi-typescript` hanya menerjemahkan dokumen apa adanya.
+
+### Soal 3: dokumen dilengkapi
+Ditambahkan `required` pada `bungkusSukses`, `bungkusDaftar`, `PaginationMeta`, `FieldError`, `ErrorResponse`, `Peserta`, `Jurnal`, dan objek `data` di `LoginResponse`. Properti yang boleh bernilai `null` memakai `nullable: true` (cara yang benar untuk OpenAPI 3.0.3). Test backend tetap hijau, lalu dokumen diekspor ulang. Bukti: `Peserta` kini bertipe `id: number` (tanpa `?`), sedangkan properti yang sengaja opsional tetap bertanda `?`.
+
+### Soal 5: eksperimen kontrak berubah
+Saat `kegiatan` diganti `aktivitas` di dokumen backend dan tipe dihasilkan ulang, `npm run build` melaporkan 18 error di 16 file (salah satunya `JurnalCard.tsx`). Sebelum perubahan itu dikembalikan, kesalahan seperti ini tidak akan terlihat sampai ada pengguna yang membuka layar yang rusak. Perubahan sudah dikembalikan dan `git status` bersih.
+
+### Soal 6: `api:types:check`
+`npm run api:types:check` menghasilkan ulang tipe lalu menjalankan `git diff --exit-code` pada `schema.d.ts`. Kalau hasilnya berbeda dari yang di-commit, perintah gagal. Gunanya: mencegah frontend memakai tipe yang sudah usang setelah API berubah. Tempat memasangnya: CI (Continuous Integration) karena lebih mudah dipaksakan ke seluruh tim. Keterbatasan: karena memakai berkas lokal, backend harus diekspor dan disalin dulu sebelum perintah ini dijalankan.
+
+### Soal 7: kenapa dokumen yang longgar menghasilkan tipe yang longgar?
+`openapi-typescript` hanya menerjemahkan dokumen, dan tidak tahu apa yang sebenarnya dikirim server. Properti dianggap wajib hanya jika disebut di `required`, jadi tanpa daftar itu semuanya menjadi opsional (`id?: number`). Akibatnya di frontend, nilai seperti `jurnal.id` bertipe `number | undefined` dan harus diperiksa terus, padahal API selalu mengirimnya. Di Minggu 16 kita menulis dokumen supaya kontrak antara backend dan frontend akurat. Kalau dokumennya longgar, kontraknya longgar, dan kelonggaran itu menular ke tipe di frontend. Karena itu memperbaiki dokumen (`required`, `nullable`, `enum`) langsung memperketat tipe di frontend.
