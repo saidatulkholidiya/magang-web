@@ -428,3 +428,79 @@ Saat `kegiatan` diganti `aktivitas` di dokumen backend dan tipe dihasilkan ulang
 
 ### Soal 7: kenapa dokumen yang longgar menghasilkan tipe yang longgar?
 `openapi-typescript` hanya menerjemahkan dokumen, dan tidak tahu apa yang sebenarnya dikirim server. Properti dianggap wajib hanya jika disebut di `required`, jadi tanpa daftar itu semuanya menjadi opsional (`id?: number`). Akibatnya di frontend, nilai seperti `jurnal.id` bertipe `number | undefined` dan harus diperiksa terus, padahal API selalu mengirimnya. Di Minggu 16 kita menulis dokumen supaya kontrak antara backend dan frontend akurat. Kalau dokumennya longgar, kontraknya longgar, dan kelonggaran itu menular ke tipe di frontend. Karena itu memperbaiki dokumen (`required`, `nullable`, `enum`) langsung memperketat tipe di frontend.
+
+
+Aturan: hanya `src/api/client.ts` yang memanggil `fetch`. Komponen hanya menerima data atau `ApiError`.
+Bukti: pencarian `fetch(` di `src` menghasilkan 1 hasil (hanya `client.ts`).
+
+### Soal 1: kenapa properti ApiError ditulis eksplisit
+
+Parameter property (`constructor(readonly status: number)`) adalah sintaks pintas TypeScript yang menghasilkan kode JavaScript saat dikompilasi. Template Vite menyalakan `erasableSyntaxOnly`, yang hanya mengizinkan sintaks tipe murni yang bisa dihapus. Karena itu properti dideklarasikan dulu secara eksplisit, lalu diisi di dalam konstruktor.
+
+### Empat langkah `request()`
+
+1. Kirim di dalam `try/catch`: `fetch` hanya menolak saat jaringan gagal, jadi itu `NETWORK_ERROR`.
+2. Baca isi sebagai teks dulu, baru `JSON.parse`, karena isi bisa kosong (204) atau bukan JSON.
+3. Jika status bukan 2xx, terjemahkan format error baku (`error.kode`, `error.pesan`, `error.detail`,
+   `requestId`) menjadi `ApiError`. Bentuk tak dikenal menjadi `BAD_RESPONSE`.
+4. Jika sukses, kembalikan JSON. Dua `as` (`undefined as T` dan `json as T`) sengaja dikurung di sini.
+
+### Soal 4: hasil uji klien
+
+| Skenario | Status | Kode | requestId |
+|---|---|---|---|
+| Ambil jurnal tanpa login | 401 | `UNAUTHORIZED` | (terbaca) |
+| Login password salah | 401 | `UNAUTHORIZED` | (terbaca) |
+| Login benar | 200 | (berhasil) | (tidak ada) |
+| Ambil jurnal setelah login | 200 | (berhasil) | (tidak ada) |
+
+Temuan: `GET /me/jurnal` menerima parameter `page` dan `limit`, tetapi balasan asli **tidak** memuat `meta` (bernilai `undefined`). Ini ketidakcocokan antara dokumen OpenAPI (yang menyatakan `required`) dengan kenyataan.
+
+### Soal 5: kasus ekstrem
+
+| Keadaan | Cara | Hasil |
+|---|---|---|
+| Jaringan putus | DevTools Offline | status 0, `NETWORK_ERROR` |
+| 200 bukan JSON | memanggil `/api/docs/` | status 200, `BAD_RESPONSE` |
+| Backend mati di belakang proxy | Matikan port 3000 via `taskkill` | status 502, `BAD_RESPONSE` |
+
+Catatan: lewat proxy Vite, backend mati tidak menghasilkan `NETWORK_ERROR` karena browser tetap
+berhasil menjangkau Vite. Vite membalas dengan status 502 yang tidak berisi JSON baku, sehingga klien menerjemahkannya menjadi `BAD_RESPONSE`. Di Windows, `Ctrl+C` pada nodemon meninggalkan proses anak yang masih memegang port, sehingga kematian server dibuktikan lewat `netstat` (kosong) dan `taskkill`.
+
+### Soal 6: pesan untuk pengguna
+
+| Kode | Pesan yang kuharapkan | Pesan yang tampil |
+|---|---|---|
+| `NETWORK_ERROR` | Tidak dapat terhubung ke server... | Tidak dapat terhubung ke server. Periksa koneksi internetmu lalu coba lagi. |
+| `UNAUTHORIZED` | Sesi berakhir, silakan login... | Sesimu berakhir atau belum login. Silakan login kembali. |
+| `FORBIDDEN` | Tidak punya akses... | Kamu tidak memiliki akses untuk aksi ini. |
+| `NOT_FOUND` | Data tidak ditemukan... | Data yang dicari tidak ditemukan. |
+| `RATE_LIMITED` | Terlalu banyak percobaan... | Terlalu banyak percobaan. Tunggu beberapa saat lalu coba lagi. |
+| `VALIDATION_ERROR` | Data tidak valid... | Data yang dikirim belum valid. Periksa kembali isianmu. |
+
+Prinsip: pesan ditulis frontend untuk manusia, `requestId` ditampilkan sebagai "Kode laporan",
+dan perilaku diputuskan lewat kode error, bukan teks pesan. (Fungsi `kodeLaporan` mengembalikan `Kode laporan: abc-123` jika ada requestId, dan `null` jika tidak ada).
+
+### Soal 7: peta kode ke perilaku
+
+| Kode | Yang dilakukan aplikasi | Dibangun di |
+|---|---|---|
+| `NETWORK_ERROR` | Pesan "tidak dapat terhubung" dan tombol coba lagi | Kamis |
+| `UNAUTHORIZED` | Arahkan ke halaman login | Minggu 20 |
+| `TOKEN_EXPIRED` | Segarkan token otomatis, ulangi permintaan | Minggu 20 |
+| `INVALID_TOKEN` | Hapus sesi, arahkan ke login | Minggu 20 |
+| `FORBIDDEN` | Pesan tidak punya akses, sembunyikan menu sesuai role | Minggu 20 |
+| `VALIDATION_ERROR` | Tampilkan pesan di kolom form yang tepat (dari `detail`) | Jumat |
+| `NOT_FOUND` | Pesan "data tidak ditemukan" | Kamis |
+| `CONFLICT` | Pesan bahwa data sudah ada (misal email terdaftar) | Jumat |
+| `RATE_LIMITED` | Pesan tunggu, nonaktifkan tombol sementara | Jumat |
+| `PAYLOAD_TOO_LARGE` | Pesan data terlalu besar | Jumat |
+| `INTERNAL_ERROR` / `BAD_RESPONSE` | Pesan umum dan tampilkan kode laporan | Kamis |
+| `INVALID_JSON` | Pesan umum (kesalahan di sisi klien) | Jumat |
+
+### Soal 8: header X-Request-Id
+
+Header terbaca lewat `res.headers.get("X-Request-Id")` karena proxy membuat permintaan satu origin.
+Terbukti dari tab Network: saat backend hidup (200 OK), respons memuat header `x-request-id` (contoh: `4b1f71cd-...`). 
+
+Saat backend mati (502 dari Vite), header `x-request-id` tidak ada karena yang membalas adalah Vite. Jika frontend dan API berbeda domain, backend harus mengirim `Access-Control-Expose-Headers: X-Request-Id` (opsi `exposedHeaders` pada middleware `cors`), kalau tidak header itu tidak terbaca.

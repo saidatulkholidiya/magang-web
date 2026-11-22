@@ -487,14 +487,14 @@ export interface components {
     };
     FieldError: {
       /** @example email */
-      field?: string;
+      field: string;
       /** @example Format email tidak valid */
-      pesan?: string;
+      pesan: string;
     };
     ErrorResponse: {
       /** @example false */
-      sukses?: boolean;
-      error?: {
+      sukses: boolean;
+      error: {
         /** @enum {string} */
         kode: "VALIDATION_ERROR" | "INVALID_JSON" | "UNAUTHORIZED" | "TOKEN_EXPIRED" | "INVALID_TOKEN" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "RATE_LIMITED" | "PAYLOAD_TOO_LARGE" | "INTERNAL_ERROR";
         pesan: string;
@@ -544,25 +544,25 @@ export interface components {
     };
     PesertaResponse: {
       /** @example true */
-      sukses?: boolean;
+      sukses: boolean;
       /** @example Berhasil */
-      pesan?: string;
-      data?: components["schemas"]["Peserta"];
+      pesan: string;
+      data: components["schemas"]["Peserta"];
     };
     PesertaListResponse: {
       /** @example true */
-      sukses?: boolean;
+      sukses: boolean;
       /** @example Berhasil */
-      pesan?: string;
-      data?: components["schemas"]["Peserta"][];
-      meta?: components["schemas"]["PaginationMeta"];
+      pesan: string;
+      data: components["schemas"]["Peserta"][];
+      meta: components["schemas"]["PaginationMeta"];
     };
     LoginResponse: {
       /** @example true */
-      sukses?: boolean;
+      sukses: boolean;
       /** @example Berhasil */
-      pesan?: string;
-      data?: {
+      pesan: string;
+      data: {
         accessToken: string;
         refreshToken: string;
         peserta: components["schemas"]["Peserta"];
@@ -624,18 +624,18 @@ export interface components {
     }]>;
     JurnalResponse: {
       /** @example true */
-      sukses?: boolean;
+      sukses: boolean;
       /** @example Berhasil */
-      pesan?: string;
-      data?: components["schemas"]["Jurnal"];
+      pesan: string;
+      data: components["schemas"]["Jurnal"];
     };
     JurnalListResponse: {
       /** @example true */
-      sukses?: boolean;
+      sukses: boolean;
       /** @example Berhasil */
-      pesan?: string;
-      data?: components["schemas"]["Jurnal"][];
-      meta?: components["schemas"]["PaginationMeta"];
+      pesan: string;
+      data: components["schemas"]["Jurnal"][];
+      meta: components["schemas"]["PaginationMeta"];
     };
   };
   responses: {
