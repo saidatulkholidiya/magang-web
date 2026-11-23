@@ -21,3 +21,4 @@ export async function buatJurnal(data: JurnalBaru) {
   const body = await request<JurnalResponse>("POST", "/jurnal", { body: data });
   return body.data;
 }
+

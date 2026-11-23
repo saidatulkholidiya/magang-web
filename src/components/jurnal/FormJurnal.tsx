@@ -1,26 +1,42 @@
 import { useRef, useState } from "react";
 import type { ChangeEventHandler, FormEventHandler } from "react";
-import { Button } from "../ui/Button";
+import { adalahKode, keApiError } from "../../api/errors";
+import { kodeLaporan, pesanUntukPengguna } from "../../api/pesan";
+import type { JurnalBaru } from "../../api/types";
 import { cx } from "../../utils/cx";
+import { detailKeErrors } from "../../utils/detailError";
 import { validasiFormJurnal } from "../../utils/validasiJurnal";
 import type { FormJurnalErrors, FormJurnalState } from "../../utils/validasiJurnal";
-import type { JurnalBaru } from "../../api/types";
+import { Alert } from "../ui/Alert";
+import { Button } from "../ui/Button";
 import styles from "./FormJurnal.module.css";
 
 interface FormJurnalProps {
-  onTambah: (data: JurnalBaru) => void;
+  onTambah: (data: JurnalBaru) => Promise<void>;
 }
+
+type StatusKirim =
+  | { status: "diam" }
+  | { status: "menyimpan" }
+  | { status: "gagal"; pesan: string; umum: string[]; laporan: string | null };
 
 const NILAI_AWAL: FormJurnalState = { kegiatan: "", hambatan: "", linkCommit: "" };
 
 export function FormJurnal({ onTambah }: FormJurnalProps) {
   const [nilai, setNilai] = useState<FormJurnalState>(NILAI_AWAL);
   const [errors, setErrors] = useState<FormJurnalErrors>({});
+  const [statusKirim, setStatusKirim] = useState<StatusKirim>({ status: "diam" });
 
-  // Pegangan ke tiap kolom, supaya fokus bisa dipindah ke kolom pertama yang salah
   const kegiatanRef = useRef<HTMLTextAreaElement>(null);
   const hambatanRef = useRef<HTMLTextAreaElement>(null);
   const linkCommitRef = useRef<HTMLInputElement>(null);
+
+  // Fokus ke kolom pertama yang salah, urut dari atas ke bawah
+  function fokusKePertama(e: FormJurnalErrors) {
+    if (e.kegiatan) kegiatanRef.current?.focus();
+    else if (e.hambatan) hambatanRef.current?.focus();
+    else if (e.linkCommit) linkCommitRef.current?.focus();
+  }
 
   const ubah: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
     const { name, value } = e.target;
@@ -30,30 +46,38 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
 
   const kirim: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
+    if (statusKirim.status === "menyimpan") return; // pagar kedua selain tombol nonaktif
 
     const hasil = validasiFormJurnal(nilai);
     setErrors(hasil);
+    if (Object.keys(hasil).length > 0) {
+      fokusKePertama(hasil);
+      return;
+    }
 
-    // Fokus ke kolom pertama yang salah, urut dari atas ke bawah
-    if (hasil.kegiatan) {
-      kegiatanRef.current?.focus();
-      return;
-    }
-    if (hasil.hambatan) {
-      hambatanRef.current?.focus();
-      return;
-    }
-    if (hasil.linkCommit) {
-      linkCommitRef.current?.focus();
-      return;
-    }
+    setStatusKirim({ status: "menyimpan" });
 
     onTambah({
       kegiatan: nilai.kegiatan.trim(),
-      hambatan: nilai.hambatan.trim() || undefined,
+      hambatan: nilai.hambatan.trim() || undefined, // dihilangkan, bukan null: dokumen tidak menerima null
       linkCommit: nilai.linkCommit.trim() || undefined,
-    });
-    setNilai(NILAI_AWAL);
+    })
+      .then(() => {
+        setNilai(NILAI_AWAL);
+        setErrors({});
+        setStatusKirim({ status: "diam" });
+      })
+      .catch((err: unknown) => {
+        if (adalahKode(err, "VALIDATION_ERROR")) {
+          const { kolom, umum } = detailKeErrors(err.detail);
+          setErrors(kolom);
+          fokusKePertama(kolom);
+          setStatusKirim({ status: "gagal", pesan: pesanUntukPengguna(err), umum, laporan: kodeLaporan(err) });
+          return;
+        }
+        const error = keApiError(err);
+        setStatusKirim({ status: "gagal", pesan: pesanUntukPengguna(error), umum: [], laporan: kodeLaporan(error) });
+      });
   };
 
   return (
@@ -109,7 +133,17 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
         )}
       </div>
 
-      <Button type="submit">Simpan Jurnal</Button>
+      {statusKirim.status === "gagal" && (
+        <Alert tipe="bahaya">
+          <p>{statusKirim.pesan}</p>
+          {statusKirim.umum.map((u) => <p key={u}>{u}</p>)}
+          {statusKirim.laporan !== null && <p>{statusKirim.laporan}</p>}
+        </Alert>
+      )}
+
+      <Button type="submit" disabled={statusKirim.status === "menyimpan"}>
+        {statusKirim.status === "menyimpan" ? "Menyimpan..." : "Simpan Jurnal"}
+      </Button>
     </form>
   );
 }
