@@ -22,3 +22,7 @@ export async function buatJurnal(data: JurnalBaru) {
   return body.data;
 }
 
+export async function hapusJurnal(id: number): Promise<void> {
+  await request<undefined>("DELETE", `/jurnal/${id}`);
+}
+

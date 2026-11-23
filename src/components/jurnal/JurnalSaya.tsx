@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { buatJurnal } from "../../api/jurnal";
+import { buatJurnal, hapusJurnal } from "../../api/jurnal";
+import { keApiError } from "../../api/errors";
 import { kodeLaporan, pesanUntukPengguna } from "../../api/pesan";
 import type { JurnalBaru } from "../../api/types";
 import { useJurnalSaya } from "../../hooks/useJurnalSaya";
@@ -8,7 +9,7 @@ import { Button } from "../ui/Button";
 import DaftarJurnal from "./DaftarJurnal";
 import { FormJurnal } from "./FormJurnal";
 
-// Hapus dan review belum terhubung ke API (hapus adalah bonus di bawah)
+// Review belum terhubung ke API (hapus sudah terhubung di bonus)
 function tidakMelakukanApaApa() {
   // sengaja kosong
 }
@@ -16,6 +17,14 @@ function tidakMelakukanApaApa() {
 export function JurnalSaya() {
   const [halaman, setHalaman] = useState(1);
   const { hasil, muatUlang } = useJurnalSaya(halaman);
+  const [galatHapus, setGalatHapus] = useState<string | null>(null);
+
+  function hapus(id: number) {
+    setGalatHapus(null);
+    hapusJurnal(id)
+      .then(muatUlang)
+      .catch((err: unknown) => setGalatHapus(pesanUntukPengguna(keApiError(err))));
+  }
 
   async function tambah(data: JurnalBaru): Promise<void> {
     await buatJurnal(data);
@@ -41,8 +50,8 @@ export function JurnalSaya() {
 
       case "berhasil": {
         const { daftar } = hasil.data;
-// Cadangan kalau backend tidak mengirim meta (temuan nyata!)
-const meta = hasil.data.meta ?? { page: 1, totalPages: 1, hasNext: false, hasPrev: false };
+        // Cadangan kalau backend tidak mengirim meta (temuan nyata!)
+        const meta = hasil.data.meta ?? { page: 1, totalPages: 1, hasNext: false, hasPrev: false };
 
         if (daftar.length === 0) {
           return <p>Belum ada jurnal. Tulis jurnal pertamamu!</p>;
@@ -50,11 +59,16 @@ const meta = hasil.data.meta ?? { page: 1, totalPages: 1, hasNext: false, hasPre
 
         return (
           <>
+            {galatHapus !== null && (
+              <Alert tipe="bahaya">
+                <p>{galatHapus}</p>
+              </Alert>
+            )}
             <DaftarJurnal
               jurnal={daftar}
               role="peserta"
               pesanKosong="Belum ada jurnal."
-              onHapus={tidakMelakukanApaApa}
+              onHapus={hapus}
               onUbahReview={tidakMelakukanApaApa}
             />
             <nav aria-label="Halaman">
