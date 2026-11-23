@@ -504,3 +504,65 @@ Header terbaca lewat `res.headers.get("X-Request-Id")` karena proxy membuat perm
 Terbukti dari tab Network: saat backend hidup (200 OK), respons memuat header `x-request-id` (contoh: `4b1f71cd-...`). 
 
 Saat backend mati (502 dari Vite), header `x-request-id` tidak ada karena yang membalas adalah Vite. Jika frontend dan API berbeda domain, backend harus mengirim `Access-Control-Expose-Headers: X-Request-Id` (opsi `exposedHeaders` pada middleware `cors`), kalau tidak header itu tidak terbaca.
+
+## Minggu 19, Kamis: mengambil data di komponen
+
+### Model keadaan
+
+`StatusPermintaan<T>` adalah discriminated union dengan tiga keadaan: memuat, berhasil, dan gagal.
+Keadaan kosong bukan status sendiri: Daftar kosong adalah keadaan "berhasil" dengan `daftar.length === 0`. Menjadikannya status tersendiri akan membuat satu fakta punya dua representasi yang bisa bertentangan, dan memaksa hook mengurusi urusan tampilan.
+
+### Soal 2: hook `useJurnalSaya`
+
+| Bagian | Masalah yang diselesaikan |
+|---|---|
+| `AbortController` dan cleanup | Membatalkan request lama saat halaman diganti agar tidak terjadi *race condition*. |
+| `signal.aborted` di `catch` | Menangkap pembatalan (AbortError) agar tidak ditampilkan sebagai error ke pengguna. |
+| `kunci` pada hasil | Memastikan hasil lama tidak dianggap hasil untuk halaman baru. |
+| status `memuat` diturunkan | Menghindari penyimpanan state yang redundan (tidak menyimpan `setState("memuat")` di efek). |
+| `versi` | Menaikkan nilai versi akan mengubah `kunci`, memicu efek berjalan lagi (untuk fitur "Coba lagi"). |
+
+### Soal 3.6: Temuan Paginasi
+
+Berdasarkan pengecekan tab Network pada endpoint `GET /me/jurnal?page=1&limit=5`:
+- Backend **mengabaikan** parameter `page` dan `limit`. Buktinya, meskipun diminta `limit=5`, backend mengembalikan seluruh 11 data sekaligus.
+- Backend **tidak mengirimkan objek `meta`** sama sekali. Backend malah mengirim field `"total": 11` di tingkat atas respons.
+- Akibatnya, tipe `JurnalListResponse` di frontend (yang menganggap `meta` selalu ada) menjadi tidak akurat. Aplikasi sempat *blank putih* saat membaca `meta.hasPrev` yang `undefined`. Hal ini diatasi di frontend dengan memberikan nilai *default* (`?? { page: 1, totalPages: 1, hasNext: false, hasPrev: false }`).
+
+### Soal 4: permintaan canceled
+
+Saat development, terlihat dua request di Network. Request pertama berstatus *(canceled)* (kolom status kosong, ikon merah, ukuran 0 B). Ini terjadi karena React StrictMode sengaja melepas dan memasang ulang komponen untuk menguji *cleanup*. Ini bukan bug, melainkan bukti bahwa fungsi `pengendali.abort()` bekerja membatalkan request yang tidak diperlukan saat komponen dilepas.
+
+### Soal 5: race condition
+
+Untuk membuktikan bahaya *race condition*, aku sengaja membuat request halaman 1 menjadi lambat (4 detik) dan melepas perlindungan `AbortController` serta pencocokan `kunci`. Saat aku mengklik "Sebelumnya" (halaman 1) lalu dengan cepat mengklik "Berikutnya" (halaman 2), data halaman 2 muncul lebih dulu. Namun, beberapa detik kemudian data halaman 1 yang lambat tiba dan **menimpa** tampilan. Dua perlindungan yang mencegah hal ini di kode asli: (1) Pembatalan via `cleanup` (`AbortController`) yang membatalkan request lama, dan (2) Pencocokan `kunci` agar hasil lama tidak pernah ditampilkan.
+
+### Soal 6: semua keadaan
+
+| Keadaan | Cara membuatnya | Tangkapan layar |
+|---|---|---|
+| Memuat | Slow 4G | ![memuat](docs/screenshots/a.memuat.png.png) |
+| Gagal jaringan | Offline | ![jaringan](docs/screenshots/b.gagal_jaringan.png.png) |
+| Gagal 401 | Hapus token | ![401](docs/screenshots/c.gagal_401.png.png) |
+| Kosong | Akun tanpa jurnal | ![kosong](docs/screenshots/d.kosong.png.png) |
+| Berhasil + pagination | Akun 12 jurnal | ![berhasil](docs/screenshots/e.berhasil.png.png) |
+
+
+### Soal 7: coba lagi
+
+Saat jaringan diputus (Offline), muncul pesan error. Setelah jaringan dinyalakan kembali dan tombol "Coba lagi" diklik, data berhasil muncul kembali tanpa perlu me-reload halaman. Ini bekerja karena fungsi `muatUlang` menaikkan nilai `versi` di hook, yang memicu efek untuk mengambil ulang data.
+
+### Soal 8: ESLint
+
+`npm run lint` berjalan bersih: 0 warning, 0 error.
+
+### Soal 9: tiga masalah yang harus ditangani sendiri
+
+Saat mengambil data di `useEffect`, ada tiga masalah yang harus ditangani sendiri yang tidak akan muncul jika datanya statis: (1) permintaan bisa **lambat**, sehingga kita harus membuat keadaan *memuat* agar layar tidak kosong; (2) permintaan bisa **gagal** karena jaringan atau server, sehingga butuh penanganan error yang ramah dan tombol coba lagi; (3) jawaban bisa **kembali tidak berurutan** (*race condition*), sehingga kita harus menggunakan `AbortController` dan penguncian data agar data lama tidak menimpa data baru. Selain itu, kita harus mengulang logika yang sama di setiap komponen. Alat seperti **TanStack Query** (Minggu 21) seharusnya mengurus semua ini untuk kita, dengan menyediakan *cache*, pembatalan otomatis, mencoba ulang, dan menyimpan data lama saat memuat data baru.
+
+### Temuan dan keterbatasan
+
+- Backend `/me/jurnal` belum mendukung paginasi (`page` dan `limit` diabaikan) dan tidak mengirim `meta`.
+- Saat berpindah halaman, tampilan berganti ke "Memuat jurnal..." sejenak (kedip). Data lama tidak disimpan.
+- Tombol Hapus pada kartu belum terhubung ke API (hari Jumat).
+- Login masih sementara: token hanya di memori, jadi reload halaman membuat pengguna keluar (diperbaiki Minggu 20).

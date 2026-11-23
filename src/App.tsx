@@ -13,7 +13,7 @@ import { useLocalStorage } from "./hooks/useLocalStorage";
 import { adalahDaftarJurnal, adalahFilterStatus } from "./utils/guard";
 import { usePenundaan } from "./hooks/usePenundaan";
 import type { role } from "./types/peserta";
-import { UjiKlien } from "./latihan/UjiKlien"
+import { HalamanUjiJurnal } from "./latihan/HalamanUjiJurnal";
 
 export default function App() {
   const [jurnal, setJurnal] = useLocalStorage<Jurnal[]>(
@@ -96,7 +96,8 @@ export default function App() {
         pesanKosong={pesanKosong}
         onHapus={hapusJurnal}
         onUbahReview={ubahReview}
-      /><UjiKlien />
+      />
+      <HalamanUjiJurnal />
     </main>
   );
 }
