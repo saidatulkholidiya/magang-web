@@ -49,6 +49,7 @@ export function FormJurnal({ onTambah }: FormJurnalProps) {
     if (statusKirim.status === "menyimpan") return; // pagar kedua selain tombol nonaktif
 
     const hasil = validasiFormJurnal(nilai);
+    //const hasil: FormJurnalErrors = {};
     setErrors(hasil);
     if (Object.keys(hasil).length > 0) {
       fokusKePertama(hasil);

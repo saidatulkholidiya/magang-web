@@ -51,8 +51,8 @@ export function JurnalSaya() {
       case "berhasil": {
         const { daftar } = hasil.data;
         // Cadangan kalau backend tidak mengirim meta (temuan nyata!)
+       // const meta = hasil.data.meta ?? { page: 2, totalPages: 3, hasNext: true, hasPrev: true };
         const meta = hasil.data.meta ?? { page: 1, totalPages: 1, hasNext: false, hasPrev: false };
-
         if (daftar.length === 0) {
           return <p>Belum ada jurnal. Tulis jurnal pertamamu!</p>;
         }

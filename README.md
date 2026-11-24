@@ -566,3 +566,95 @@ Saat mengambil data di `useEffect`, ada tiga masalah yang harus ditangani sendir
 - Saat berpindah halaman, tampilan berganti ke "Memuat jurnal..." sejenak (kedip). Data lama tidak disimpan.
 - Tombol Hapus pada kartu belum terhubung ke API (hari Jumat).
 - Login masih sementara: token hanya di memori, jadi reload halaman membuat pengguna keluar (diperbaiki Minggu 20).
+
+## Minggu 19, Jumat: Jurnal dari API
+
+### Cara Menjalankan (Dua Terminal)
+
+**Terminal 1: Backend (folder `api-magang`)**
+
+```bash
+npm install
+npm run dev
+```
+
+Backend berjalan di: http://localhost:3000
+
+**Terminal 2: Frontend (folder `magang-web`)**
+
+```bash
+npm install
+npm run dev
+```
+
+Frontend berjalan di: http://localhost:5173
+
+Proxy Vite meneruskan `/api` ke backend. Dokumentasi API: `http://localhost:5173/api/docs/`.
+
+### Akun Uji
+
+Daftarkan melalui Swagger (`POST /auth/register`, body memuat `konfirmasiPassword`).
+
+Contoh akun:
+- `peserta.uji2@example.com` (akun dengan jurnal).
+- `kosong.uji@example.com` (akun tanpa jurnal).
+
+Jangan menaruh kata sandi sungguhan di README. Reload halaman membuat pengguna keluar karena token hanya di memori (Minggu 20).
+
+### Alur Kerja Tipe
+
+Ubah dokumen di backend, jalankan `npm test`, `npm run docs:export`, salin `openapi.json` ke frontend, kemudian jalankan `npm run api:types` dan `npm run build`.
+
+### Keputusan Desain
+
+1. **Klien API tunggal:** Hanya `src/api/client.ts` yang memanggil `fetch`. Komponen hanya menerima data atau `ApiError`. Ini memastikan semua penanganan error (401, 422, jaringan putus) terpusat dan konsisten.
+
+2. **Status kirim sebagai union, bukan boolean `sedangMenyimpan`:** Status form dimodelkan sebagai `diam | menyimpan | gagal`. Ini mencegah keadaan mustahil seperti `loading` dan `error` bernilai true bersamaan.
+
+3. **Kolom opsional dihilangkan, bukan `null`:** Saat mengirim jurnal, kolom `hambatan` dan `linkCommit` yang kosong diubah menjadi `undefined` (bukan `null`) agar sesuai dengan kontrak `CreateJurnalRequest` di OpenAPI.
+
+4. **Detail 422 dipetakan lewat fungsi murni:** Fungsi `detailKeErrors` memisahkan error per kolom dari error umum, sehingga komponen form tetap bersih.
+
+### Tabel Kode Error ke Perilaku (yang Sudah Dibangun)
+
+| Kode | Perilaku Sekarang |
+|---|---|
+| `NETWORK_ERROR` | Menampilkan pesan "Tidak dapat terhubung ke server...", bukan layar putih. |
+| `UNAUTHORIZED` | Login: "Email atau password salah". Lainnya: pesan sesi berakhir (Minggu 20: arahkan ke login). |
+| `VALIDATION_ERROR` | Detail dipetakan ke kolom form (kegiatan, hambatan, linkCommit); sisanya pesan umum. |
+| `RATE_LIMITED` | Menampilkan pesan "Terlalu banyak percobaan...". |
+| `BAD_RESPONSE` / `INTERNAL_ERROR` | Pesan umum + kode laporan (requestId). |
+
+### Hasil "Coba Rusakkan Koneksiku" (Aplikasiku Sendiri)
+
+| # | Skenario | Hasil | Status |
+|---|---|---|---|
+| 1 | Backend mati, lalu Coba lagi | Pesan jaringan ramah, data muncul tanpa reload setelah klik Coba lagi. | Lulus |
+| 2 | Slow 4G | Teks "Memuat jurnal..." muncul, tidak macet. | Lulus |
+| 3 | Berikutnya berulang cepat | Tidak dapat diuji karena tombol paginasi tidak muncul di UI (backend belum mendukung paginasi) dan tombol hilang saat state memuat. | Skip |
+| 4 | Password salah | "Email atau password salah." tanpa menyebut emailnya. | Lulus |
+| 5 | Login salah 11 kali | Pesan "Terlalu banyak percobaan..." (bukan layar rusak). | Lulus |
+| 6 | Email salah format, password kosong | Error per kolom (422 dari server). | Lulus |
+| 7 | Kegiatan 9 karakter (validasi klien dimatikan) | Error 422 server muncul di kolom kegiatan. | Lulus |
+| 8 | Link commit tidak valid | Error di kolom linkCommit (server memvalidasi URL). | Lulus |
+| 9 | Simpan dua kali cepat | Tombol "Menyimpan..." nonaktif, hanya satu request POST di Network. | Lulus |
+| 10 | Token sembarang | Pesan sesi berakhir, bukan crash. | Lulus |
+| 11 | Error 500 | Pesan generik + kode laporan muncul. | Lulus |
+| 12 | Token di URL dan konsol | Tidak ada token di URL, token hanya di header Authorization. Console bersih. | Lulus |
+
+**Skenario yang paling mudah merusak aplikasi:** Skenario 1 (backend mati) dan Skenario 11 (error 500), karena jika tidak ditangani dengan baik, pengguna akan melihat layar putih atau pesan error mentah. Hal ini seharusnya diperbaiki di lapisan **klien API (`client.ts`)** dengan memastikan semua respons non-2xx diubah menjadi `ApiError` yang ramah.
+
+**Kode laporan lebih berguna daripada pesan panjang** karena pengguna tidak perlu memahami detail teknis; mereka cukup melaporkan kode unik tersebut, dan pengembang dapat melacak log spesifik di backend.
+
+### Temuan Integrasi
+
+| Temuan | Bukti | Dokumen atau Kode yang Salah? | Tindakan |
+|---|---|---|---|
+| `GET /me/jurnal` tidak mendukung paginasi dan tidak mengirim `meta`. | Request `?page=1&limit=5` mengembalikan seluruh 11 data tanpa `meta`. | Kode backend (mengabaikan parameter) dan dokumen OpenAPI (tidak mendeklarasikan `page`/`limit`). | Frontend menambahkan nilai default `meta` agar tidak crash; perbaikan backend perlu ditindaklanjuti (issue). |
+
+### Keterbatasan
+
+- Review mentor dan saklar peran tidak dihubungkan ke API minggu ini.
+- Berpindah halaman menampilkan "Memuat jurnal..." sejenak (kedip), karena data lama tidak disimpan.
+- Token hanya di memori, sehingga reload membuat pengguna keluar.
+- Uji 3 (klik berulang) tidak dapat dilakukan karena backend belum mendukung paginasi.
