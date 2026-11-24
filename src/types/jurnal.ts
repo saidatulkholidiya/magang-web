@@ -1,19 +1,4 @@
-export type StatusReview = "belum" | "sudah";
-export type JurnalBaru = Pick<Jurnal, "kegiatan" | "hambatan" | "linkCommit">;
-export type FilterStatus = "semua" | StatusReview;
-export interface Lampiran {
-  url: string;
-  keterangan?: string;
-}
+import type { StatusReview } from "../api/types";
 
-export interface Jurnal {
-  id: number;
-  pesertaId: number;
-  kegiatan: string;
-  hambatan?: string | null;
-  linkCommit?: string | null;
-  lampiran?: Lampiran[] | null;
-  statusReview: StatusReview;
-  catatanMentor?: string | null;
-  createdAt: string;
-}
+// Tipe khusus UI, bukan bentuk data dari API
+export type FilterStatus = "semua" | StatusReview;

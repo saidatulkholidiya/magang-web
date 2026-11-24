@@ -1,5 +1,5 @@
 import DaftarJurnal from "./jurnal/DaftarJurnal";
-import type { Jurnal } from "../types/jurnal";
+import type { Jurnal } from "../api/types";
 
 type HasilJurnalProps =
   | { status: "memuat" }

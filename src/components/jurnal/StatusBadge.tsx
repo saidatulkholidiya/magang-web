@@ -1,4 +1,4 @@
-import type { StatusReview } from "../../types/jurnal";
+import type { StatusReview } from "../../api/types";
 import styles from "./StatusBadge.module.css";
 
 export default function StatusBadge({ status }: { status: StatusReview }) {

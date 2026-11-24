@@ -387,3 +387,182 @@ Saat memanggil `fetch("/api/v1/me")` tanpa token, server membalas dengan status 
 
 ### Soal 8: Proxy Vite vs Nginx
 Kode frontend selalu memanggil alamat relatif seperti `/api/v1/...` dan tidak pernah menuliskan alamat server secara langsung. Alamat relatif ini otomatis menunjuk ke origin tempat halaman itu dibuka. Di *development*, Vite meneruskan permintaan `/api` tersebut ke backend lokal (`localhost:3000`). Di produksi, peran Vite digantikan oleh Nginx yang juga meneruskan `/api` ke *container* API. Karena yang berubah hanya perantara yang meneruskan (dari Vite ke Nginx), kode frontend tidak perlu diubah sama sekali. Browser selalu melihat semua permintaan berasal dari satu origin yang sama, sehingga masalah CORS tidak pernah terjadi.
+
+## Minggu 19, Selasa: tipe TypeScript dari dokumen OpenAPI
+
+### Alur kerja
+1. Ubah dokumen di backend (`src/docs/components.ts` dan `helpers.ts`).
+2. `npm test` di backend (test dokumen harus hijau).
+3. `npm run docs:export` menghasilkan `docs/openapi.json`.
+4. Salin ke frontend: `copy ..\api-magang\docs\openapi.json openapi.json`.
+5. `npm run api:types` menghasilkan `src/api/schema.d.ts` (file hasil mesin, jangan diedit).
+6. `npm run build`, lalu perbaiki error kompilasi yang muncul.
+
+Alias tipe yang dipakai aplikasi ada di `src/api/types.ts`. Tipe khusus UI (`FilterStatus`) tetap di `src/types`.
+
+### Soal 1: hasil generate
+- `src/api/schema.d.ts` berisi 502 baris.
+- `components.schemas` berisi 18 tipe: `PaginationMeta`, `UpdateProfilRequest`, `RefreshRequest`, `FieldError`, `ErrorResponse`, `Peserta`, `RegisterRequest`, `LoginRequest`, `PesertaResponse`, `PesertaListResponse`, `LoginResponse`, `Lampiran`, `Jurnal`, `CreateJurnalRequest`, `UpdateJurnalRequest`, `ReviewJurnalRequest`, `JurnalResponse`, `JurnalListResponse`.
+- Bagian lain: `paths` (semua endpoint), `parameters`, `headers`, dan `responses` (Unauthorized, Forbidden, NotFound, Conflict, ValidationError, TooManyRequests).
+
+### Soal 2: kelonggaran tipe
+Sebelum `required` ditambahkan, semua properti `Peserta`, `Jurnal`, pembungkus response, `PaginationMeta`, `FieldError`, dan `ErrorResponse` bertanda `?` (opsional). Hanya `Lampiran.url` yang wajib, karena schema-nya sudah punya `required`.
+
+| Tipe | Properti yang bertanda `?` | Selalu ada di response? | Bisa `null`? |
+|---|---|---|---|
+| `Peserta` | id, nama, sekolah, email, fase, status, role, telepon, createdAt | Ya (semua kecuali telepon) | telepon |
+| `Jurnal` | id, pesertaId, kegiatan, hambatan, linkCommit, statusReview, catatanMentor, createdAt, lampiran | Ya | hambatan, linkCommit, catatanMentor |
+| Pembungkus (`...Response`) | sukses, pesan, data, meta | Ya | tidak |
+| `PaginationMeta` | page, limit, total, totalPages, hasNext, hasPrev | Ya | tidak |
+
+Penyebabnya: OpenAPI menganggap properti wajib hanya jika disebut di daftar `required`. Di Minggu 16 schema ditulis tanpa daftar itu, dan `openapi-typescript` hanya menerjemahkan dokumen apa adanya.
+
+### Soal 3: dokumen dilengkapi
+Ditambahkan `required` pada `bungkusSukses`, `bungkusDaftar`, `PaginationMeta`, `FieldError`, `ErrorResponse`, `Peserta`, `Jurnal`, dan objek `data` di `LoginResponse`. Properti yang boleh bernilai `null` memakai `nullable: true` (cara yang benar untuk OpenAPI 3.0.3). Test backend tetap hijau, lalu dokumen diekspor ulang. Bukti: `Peserta` kini bertipe `id: number` (tanpa `?`), sedangkan properti yang sengaja opsional tetap bertanda `?`.
+
+### Soal 5: eksperimen kontrak berubah
+Saat `kegiatan` diganti `aktivitas` di dokumen backend dan tipe dihasilkan ulang, `npm run build` melaporkan 18 error di 16 file (salah satunya `JurnalCard.tsx`). Sebelum perubahan itu dikembalikan, kesalahan seperti ini tidak akan terlihat sampai ada pengguna yang membuka layar yang rusak. Perubahan sudah dikembalikan dan `git status` bersih.
+
+### Soal 6: `api:types:check`
+`npm run api:types:check` menghasilkan ulang tipe lalu menjalankan `git diff --exit-code` pada `schema.d.ts`. Kalau hasilnya berbeda dari yang di-commit, perintah gagal. Gunanya: mencegah frontend memakai tipe yang sudah usang setelah API berubah. Tempat memasangnya: CI (Continuous Integration) karena lebih mudah dipaksakan ke seluruh tim. Keterbatasan: karena memakai berkas lokal, backend harus diekspor dan disalin dulu sebelum perintah ini dijalankan.
+
+### Soal 7: kenapa dokumen yang longgar menghasilkan tipe yang longgar?
+`openapi-typescript` hanya menerjemahkan dokumen, dan tidak tahu apa yang sebenarnya dikirim server. Properti dianggap wajib hanya jika disebut di `required`, jadi tanpa daftar itu semuanya menjadi opsional (`id?: number`). Akibatnya di frontend, nilai seperti `jurnal.id` bertipe `number | undefined` dan harus diperiksa terus, padahal API selalu mengirimnya. Di Minggu 16 kita menulis dokumen supaya kontrak antara backend dan frontend akurat. Kalau dokumennya longgar, kontraknya longgar, dan kelonggaran itu menular ke tipe di frontend. Karena itu memperbaiki dokumen (`required`, `nullable`, `enum`) langsung memperketat tipe di frontend.
+
+
+Aturan: hanya `src/api/client.ts` yang memanggil `fetch`. Komponen hanya menerima data atau `ApiError`.
+Bukti: pencarian `fetch(` di `src` menghasilkan 1 hasil (hanya `client.ts`).
+
+### Soal 1: kenapa properti ApiError ditulis eksplisit
+
+Parameter property (`constructor(readonly status: number)`) adalah sintaks pintas TypeScript yang menghasilkan kode JavaScript saat dikompilasi. Template Vite menyalakan `erasableSyntaxOnly`, yang hanya mengizinkan sintaks tipe murni yang bisa dihapus. Karena itu properti dideklarasikan dulu secara eksplisit, lalu diisi di dalam konstruktor.
+
+### Empat langkah `request()`
+
+1. Kirim di dalam `try/catch`: `fetch` hanya menolak saat jaringan gagal, jadi itu `NETWORK_ERROR`.
+2. Baca isi sebagai teks dulu, baru `JSON.parse`, karena isi bisa kosong (204) atau bukan JSON.
+3. Jika status bukan 2xx, terjemahkan format error baku (`error.kode`, `error.pesan`, `error.detail`,
+   `requestId`) menjadi `ApiError`. Bentuk tak dikenal menjadi `BAD_RESPONSE`.
+4. Jika sukses, kembalikan JSON. Dua `as` (`undefined as T` dan `json as T`) sengaja dikurung di sini.
+
+### Soal 4: hasil uji klien
+
+| Skenario | Status | Kode | requestId |
+|---|---|---|---|
+| Ambil jurnal tanpa login | 401 | `UNAUTHORIZED` | (terbaca) |
+| Login password salah | 401 | `UNAUTHORIZED` | (terbaca) |
+| Login benar | 200 | (berhasil) | (tidak ada) |
+| Ambil jurnal setelah login | 200 | (berhasil) | (tidak ada) |
+
+Temuan: `GET /me/jurnal` menerima parameter `page` dan `limit`, tetapi balasan asli **tidak** memuat `meta` (bernilai `undefined`). Ini ketidakcocokan antara dokumen OpenAPI (yang menyatakan `required`) dengan kenyataan.
+
+### Soal 5: kasus ekstrem
+
+| Keadaan | Cara | Hasil |
+|---|---|---|
+| Jaringan putus | DevTools Offline | status 0, `NETWORK_ERROR` |
+| 200 bukan JSON | memanggil `/api/docs/` | status 200, `BAD_RESPONSE` |
+| Backend mati di belakang proxy | Matikan port 3000 via `taskkill` | status 502, `BAD_RESPONSE` |
+
+Catatan: lewat proxy Vite, backend mati tidak menghasilkan `NETWORK_ERROR` karena browser tetap
+berhasil menjangkau Vite. Vite membalas dengan status 502 yang tidak berisi JSON baku, sehingga klien menerjemahkannya menjadi `BAD_RESPONSE`. Di Windows, `Ctrl+C` pada nodemon meninggalkan proses anak yang masih memegang port, sehingga kematian server dibuktikan lewat `netstat` (kosong) dan `taskkill`.
+
+### Soal 6: pesan untuk pengguna
+
+| Kode | Pesan yang kuharapkan | Pesan yang tampil |
+|---|---|---|
+| `NETWORK_ERROR` | Tidak dapat terhubung ke server... | Tidak dapat terhubung ke server. Periksa koneksi internetmu lalu coba lagi. |
+| `UNAUTHORIZED` | Sesi berakhir, silakan login... | Sesimu berakhir atau belum login. Silakan login kembali. |
+| `FORBIDDEN` | Tidak punya akses... | Kamu tidak memiliki akses untuk aksi ini. |
+| `NOT_FOUND` | Data tidak ditemukan... | Data yang dicari tidak ditemukan. |
+| `RATE_LIMITED` | Terlalu banyak percobaan... | Terlalu banyak percobaan. Tunggu beberapa saat lalu coba lagi. |
+| `VALIDATION_ERROR` | Data tidak valid... | Data yang dikirim belum valid. Periksa kembali isianmu. |
+
+Prinsip: pesan ditulis frontend untuk manusia, `requestId` ditampilkan sebagai "Kode laporan",
+dan perilaku diputuskan lewat kode error, bukan teks pesan. (Fungsi `kodeLaporan` mengembalikan `Kode laporan: abc-123` jika ada requestId, dan `null` jika tidak ada).
+
+### Soal 7: peta kode ke perilaku
+
+| Kode | Yang dilakukan aplikasi | Dibangun di |
+|---|---|---|
+| `NETWORK_ERROR` | Pesan "tidak dapat terhubung" dan tombol coba lagi | Kamis |
+| `UNAUTHORIZED` | Arahkan ke halaman login | Minggu 20 |
+| `TOKEN_EXPIRED` | Segarkan token otomatis, ulangi permintaan | Minggu 20 |
+| `INVALID_TOKEN` | Hapus sesi, arahkan ke login | Minggu 20 |
+| `FORBIDDEN` | Pesan tidak punya akses, sembunyikan menu sesuai role | Minggu 20 |
+| `VALIDATION_ERROR` | Tampilkan pesan di kolom form yang tepat (dari `detail`) | Jumat |
+| `NOT_FOUND` | Pesan "data tidak ditemukan" | Kamis |
+| `CONFLICT` | Pesan bahwa data sudah ada (misal email terdaftar) | Jumat |
+| `RATE_LIMITED` | Pesan tunggu, nonaktifkan tombol sementara | Jumat |
+| `PAYLOAD_TOO_LARGE` | Pesan data terlalu besar | Jumat |
+| `INTERNAL_ERROR` / `BAD_RESPONSE` | Pesan umum dan tampilkan kode laporan | Kamis |
+| `INVALID_JSON` | Pesan umum (kesalahan di sisi klien) | Jumat |
+
+### Soal 8: header X-Request-Id
+
+Header terbaca lewat `res.headers.get("X-Request-Id")` karena proxy membuat permintaan satu origin.
+Terbukti dari tab Network: saat backend hidup (200 OK), respons memuat header `x-request-id` (contoh: `4b1f71cd-...`). 
+
+Saat backend mati (502 dari Vite), header `x-request-id` tidak ada karena yang membalas adalah Vite. Jika frontend dan API berbeda domain, backend harus mengirim `Access-Control-Expose-Headers: X-Request-Id` (opsi `exposedHeaders` pada middleware `cors`), kalau tidak header itu tidak terbaca.
+
+## Minggu 19, Kamis: mengambil data di komponen
+
+### Model keadaan
+
+`StatusPermintaan<T>` adalah discriminated union dengan tiga keadaan: memuat, berhasil, dan gagal.
+Keadaan kosong bukan status sendiri: Daftar kosong adalah keadaan "berhasil" dengan `daftar.length === 0`. Menjadikannya status tersendiri akan membuat satu fakta punya dua representasi yang bisa bertentangan, dan memaksa hook mengurusi urusan tampilan.
+
+### Soal 2: hook `useJurnalSaya`
+
+| Bagian | Masalah yang diselesaikan |
+|---|---|
+| `AbortController` dan cleanup | Membatalkan request lama saat halaman diganti agar tidak terjadi *race condition*. |
+| `signal.aborted` di `catch` | Menangkap pembatalan (AbortError) agar tidak ditampilkan sebagai error ke pengguna. |
+| `kunci` pada hasil | Memastikan hasil lama tidak dianggap hasil untuk halaman baru. |
+| status `memuat` diturunkan | Menghindari penyimpanan state yang redundan (tidak menyimpan `setState("memuat")` di efek). |
+| `versi` | Menaikkan nilai versi akan mengubah `kunci`, memicu efek berjalan lagi (untuk fitur "Coba lagi"). |
+
+### Soal 3.6: Temuan Paginasi
+
+Berdasarkan pengecekan tab Network pada endpoint `GET /me/jurnal?page=1&limit=5`:
+- Backend **mengabaikan** parameter `page` dan `limit`. Buktinya, meskipun diminta `limit=5`, backend mengembalikan seluruh 11 data sekaligus.
+- Backend **tidak mengirimkan objek `meta`** sama sekali. Backend malah mengirim field `"total": 11` di tingkat atas respons.
+- Akibatnya, tipe `JurnalListResponse` di frontend (yang menganggap `meta` selalu ada) menjadi tidak akurat. Aplikasi sempat *blank putih* saat membaca `meta.hasPrev` yang `undefined`. Hal ini diatasi di frontend dengan memberikan nilai *default* (`?? { page: 1, totalPages: 1, hasNext: false, hasPrev: false }`).
+
+### Soal 4: permintaan canceled
+
+Saat development, terlihat dua request di Network. Request pertama berstatus *(canceled)* (kolom status kosong, ikon merah, ukuran 0 B). Ini terjadi karena React StrictMode sengaja melepas dan memasang ulang komponen untuk menguji *cleanup*. Ini bukan bug, melainkan bukti bahwa fungsi `pengendali.abort()` bekerja membatalkan request yang tidak diperlukan saat komponen dilepas.
+
+### Soal 5: race condition
+
+Untuk membuktikan bahaya *race condition*, aku sengaja membuat request halaman 1 menjadi lambat (4 detik) dan melepas perlindungan `AbortController` serta pencocokan `kunci`. Saat aku mengklik "Sebelumnya" (halaman 1) lalu dengan cepat mengklik "Berikutnya" (halaman 2), data halaman 2 muncul lebih dulu. Namun, beberapa detik kemudian data halaman 1 yang lambat tiba dan **menimpa** tampilan. Dua perlindungan yang mencegah hal ini di kode asli: (1) Pembatalan via `cleanup` (`AbortController`) yang membatalkan request lama, dan (2) Pencocokan `kunci` agar hasil lama tidak pernah ditampilkan.
+
+### Soal 6: semua keadaan
+
+| Keadaan | Cara membuatnya | Tangkapan layar |
+|---|---|---|
+| Memuat | Slow 4G | ![memuat](docs/screenshots/a.memuat.png.png) |
+| Gagal jaringan | Offline | ![jaringan](docs/screenshots/b.gagal_jaringan.png.png) |
+| Gagal 401 | Hapus token | ![401](docs/screenshots/c.gagal_401.png.png) |
+| Kosong | Akun tanpa jurnal | ![kosong](docs/screenshots/d.kosong.png.png) |
+| Berhasil + pagination | Akun 12 jurnal | ![berhasil](docs/screenshots/e.berhasil.png.png) |
+
+
+### Soal 7: coba lagi
+
+Saat jaringan diputus (Offline), muncul pesan error. Setelah jaringan dinyalakan kembali dan tombol "Coba lagi" diklik, data berhasil muncul kembali tanpa perlu me-reload halaman. Ini bekerja karena fungsi `muatUlang` menaikkan nilai `versi` di hook, yang memicu efek untuk mengambil ulang data.
+
+### Soal 8: ESLint
+
+`npm run lint` berjalan bersih: 0 warning, 0 error.
+
+### Soal 9: tiga masalah yang harus ditangani sendiri
+
+Saat mengambil data di `useEffect`, ada tiga masalah yang harus ditangani sendiri yang tidak akan muncul jika datanya statis: (1) permintaan bisa **lambat**, sehingga kita harus membuat keadaan *memuat* agar layar tidak kosong; (2) permintaan bisa **gagal** karena jaringan atau server, sehingga butuh penanganan error yang ramah dan tombol coba lagi; (3) jawaban bisa **kembali tidak berurutan** (*race condition*), sehingga kita harus menggunakan `AbortController` dan penguncian data agar data lama tidak menimpa data baru. Selain itu, kita harus mengulang logika yang sama di setiap komponen. Alat seperti **TanStack Query** (Minggu 21) seharusnya mengurus semua ini untuk kita, dengan menyediakan *cache*, pembatalan otomatis, mencoba ulang, dan menyimpan data lama saat memuat data baru.
+
+### Temuan dan keterbatasan
+
+- Backend `/me/jurnal` belum mendukung paginasi (`page` dan `limit` diabaikan) dan tidak mengirim `meta`.
+- Saat berpindah halaman, tampilan berganti ke "Memuat jurnal..." sejenak (kedip). Data lama tidak disimpan.
+- Tombol Hapus pada kartu belum terhubung ke API (hari Jumat).
+- Login masih sementara: token hanya di memori, jadi reload halaman membuat pengguna keluar (diperbaiki Minggu 20).

@@ -1,4 +1,4 @@
-import type { StatusReview } from "../types/jurnal";
+import type { StatusReview } from "../api/types";
 
 // Mengembalikan pesan error, atau null kalau valid.
 // Aturan mencerminkan ReviewJurnalDto di API.

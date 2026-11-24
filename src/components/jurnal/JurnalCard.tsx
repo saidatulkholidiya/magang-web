@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Jurnal, StatusReview } from "../../types/jurnal";
+import type { Jurnal, StatusReview } from "../../api/types";
 import type { role } from "../../types/peserta";
 import { formatTanggal } from "../../utils/format";
 import StatusBadge from "./StatusBadge";

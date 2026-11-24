@@ -1,6 +1,6 @@
 import { Alert } from "../ui/Alert";
 import JurnalCard from "./JurnalCard";
-import type { Jurnal, StatusReview } from "../../types/jurnal";
+import type { Jurnal, StatusReview } from "../../api/types";
 import type { role } from "../../types/peserta";
 
 interface DaftarJurnalProps {

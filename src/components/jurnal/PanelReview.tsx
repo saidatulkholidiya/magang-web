@@ -3,7 +3,7 @@ import type { ChangeEventHandler } from "react";
 import { Button } from "../ui/Button";
 import { cx } from "../../utils/cx";
 import { validasiReview } from "../../utils/validasiReview";
-import type { StatusReview } from "../../types/jurnal";
+import type { StatusReview } from "../../api/types";
 import styles from "./PanelReview.module.css";
 
 interface PanelReviewProps {

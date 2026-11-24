@@ -1,10 +1,4 @@
-export type role = "peserta" | "mentor";
-export interface Peserta {
-  id: number;
-  nama: string;
-  sekolah: string;
-  email: string;
-  fase: number;
-  status: "aktif" | "lulus" | "berhenti";
-  role: "peserta" | "mentor";
-}
+import type { Peserta } from "../api/types";
+
+// Dipakai di seluruh aplikasi. Diturunkan dari dokumen API, bukan ditulis tangan
+export type role = Peserta["role"];
