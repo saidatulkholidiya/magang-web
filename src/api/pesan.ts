@@ -26,3 +26,10 @@ export function pesanUntukPengguna(error: ApiError): string {
 export function kodeLaporan(error: ApiError): string | null {
   return error.requestId === undefined ? null : `Kode laporan: ${error.requestId}`;
 }
+
+// Khusus konteks login: semua 401 berarti kredensial salah.
+// Pesannya sama untuk email tidak terdaftar maupun password salah.
+export function pesanLogin(error: ApiError): string {
+  if (error.status === 401) return "Email atau password salah.";
+  return pesanUntukPengguna(error);
+}

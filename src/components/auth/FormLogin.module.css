@@ -1,3 +1,4 @@
+/* src/components/jurnal/FormJurnal.module.css */
 .form {
   display: grid;
   gap: 16px;
@@ -23,6 +24,11 @@
   border: 1px solid #d1d5db;
   border-radius: var(--jari-jari);
   font: inherit;
+}
+
+textarea.input {
+  min-height: 88px;
+  resize: vertical;
 }
 
 .input:focus-visible {
