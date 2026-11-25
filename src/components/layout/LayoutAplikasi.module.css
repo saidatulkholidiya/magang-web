@@ -1,0 +1,37 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.merek {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.menu {
+  display: flex;
+  gap: 12px;
+  margin-right: auto;
+}
+
+.menu a {
+  padding: 4px 10px;
+  color: var(--warna-teks, #333);
+  text-decoration: none;
+  border-radius: var(--jari-jari, 6px);
+}
+
+.menu a:hover {
+  background: #e5e7eb;
+}
+
+.menu .aktif {
+  font-weight: 700;
+  color: var(--warna-utama, #2563eb);
+  background: #dbeafe;
+}
