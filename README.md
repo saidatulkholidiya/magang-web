@@ -748,3 +748,5 @@ Refresh token tidak boleh disimpan di `localStorage` karena JavaScript bisa memb
 ### Kesimpulan
 
 Setiap tempat penyimpanan memiliki fungsi dan risiko masing-masing. Access token lebih cocok disimpan di memori karena masa berlakunya singkat, sedangkan refresh token lebih aman disimpan menggunakan cookie `httpOnly` agar tidak bisa dibaca langsung oleh JavaScript.
+- Uji 3 (klik berulang) tidak dapat dilakukan karena backend belum mendukung paginasi.
+
