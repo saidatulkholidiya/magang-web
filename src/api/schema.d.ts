@@ -394,9 +394,10 @@ export interface paths {
   };
   "/auth/login": {
     /**
-     * Login dan dapatkan access token serta refresh token
+     * Login dan mendapatkan access token serta refresh token melalui HttpOnly Cookie
      * @description Pesan error SAMA untuk email yang tidak terdaftar maupun password yang salah.
      * Dibatasi 10 percobaan per 15 menit per IP.
+     * Refresh token disimpan dalam cookie HttpOnly, bukan di response body.
      */
     post: {
       requestBody: {
@@ -407,6 +408,10 @@ export interface paths {
       responses: {
         /** @description Login berhasil */
         200: {
+          headers: {
+            /** @description Refresh token (httpOnly, SameSite=Strict, path /api/v1/auth, 7 hari) */
+            "Set-Cookie"?: string;
+          };
           content: {
             "application/json": components["schemas"]["LoginResponse"];
           };
@@ -423,36 +428,28 @@ export interface paths {
     };
   };
   "/auth/refresh": {
-    /** Perbarui access token menggunakan refresh token */
+    /** Perbarui access token menggunakan refresh token dari HttpOnly Cookie */
     post: {
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["RefreshRequest"];
-        };
-      };
       responses: {
         /** @description Access token berhasil diperbarui */
         200: {
-          content: never;
+          content: {
+            "application/json": components["schemas"]["RefreshResponse"];
+          };
         };
         401: components["responses"]["Unauthorized"];
-        422: components["responses"]["ValidationError"];
       };
     };
   };
   "/auth/logout": {
-    /** Hapus refresh token (logout) */
+    /** Hapus refresh token dan logout */
     post: {
-      requestBody?: {
-        content: {
-          "application/json": components["schemas"]["RefreshRequest"];
-        };
-      };
       responses: {
-        /** @description Logout berhasil */
-        200: {
+        /** @description Logout berhasil, cookie refresh token dihapus */
+        204: {
           content: never;
         };
+        401: components["responses"]["Unauthorized"];
       };
     };
   };
@@ -481,9 +478,6 @@ export interface components {
       nama?: string;
       sekolah?: string;
       telepon?: string;
-    };
-    RefreshRequest: {
-      refreshToken: string;
     };
     FieldError: {
       /** @example email */
@@ -564,8 +558,16 @@ export interface components {
       pesan: string;
       data: {
         accessToken: string;
-        refreshToken: string;
         peserta: components["schemas"]["Peserta"];
+      };
+    };
+    RefreshResponse: {
+      /** @example true */
+      sukses: boolean;
+      /** @example Berhasil */
+      pesan: string;
+      data: {
+        accessToken: string;
       };
     };
     Lampiran: {
