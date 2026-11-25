@@ -26,3 +26,8 @@ export async function hapusJurnal(id: number): Promise<void> {
   await request<undefined>("DELETE", `/jurnal/${id}`);
 }
 
+export async function ambilJurnal(id: number, signal?: AbortSignal) {
+  const body = await request<JurnalResponse>("GET", `/jurnal/${id}`, { signal });
+  return body.data;
+}
+

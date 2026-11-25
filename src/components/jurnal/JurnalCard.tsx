@@ -6,6 +6,7 @@ import StatusBadge from "./StatusBadge";
 import { PanelReview } from "./PanelReview";
 import { Button } from "../ui/Button";
 import styles from "./JurnalCard.module.css";
+import { Link } from "react-router";
 
 interface JurnalCardProps {
   jurnal: Jurnal;
@@ -36,11 +37,17 @@ export default function JurnalCard({ jurnal, role, onHapus, onUbahReview }: Jurn
       <h3 className={styles.kegiatan}>{jurnal.kegiatan}</h3>
 
       <div className={styles.aksi}>
+         {/* Tombol detail bawaan (muncul jika ada data) */}
         {adaDetail && (
           <Button variant="secondary" ukuran="sm" onClick={() => setBukaDetail(!bukaDetail)}>
             {bukaDetail ? "Sembunyikan Detail" : "Tampilkan Detail"}
           </Button>
         )}
+        
+        {/* Tautan ke halaman detail */}
+        <Link to={`/jurnal/${jurnal.id}`} style={{ textDecoration: "none" }}>
+  <Button variant="primary" ukuran="sm">Lihat detail</Button>
+</Link>
 
         {role === "mentor" && !bukaReview && (
           <Button variant="primary" ukuran="sm" onClick={() => setBukaReview(true)}>

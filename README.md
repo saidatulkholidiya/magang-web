@@ -631,7 +631,7 @@ Ubah dokumen di backend, jalankan `npm test`, `npm run docs:export`, salin `open
 |---|---|---|---|
 | 1 | Backend mati, lalu Coba lagi | Pesan jaringan ramah, data muncul tanpa reload setelah klik Coba lagi. | Lulus |
 | 2 | Slow 4G | Teks "Memuat jurnal..." muncul, tidak macet. | Lulus |
-| 3 | Berikutnya berulang cepat | Tidak dapat diuji karena tombol paginasi tidak muncul di UI (backend belum mendukung paginasi) dan tombol hilang saat state memuat. | Skip |
+| 3 | Berikutnya berulang cepat | Tidak dapat diuji karena tombol paginasi tidak muncul di UI (backend belum mendukung paginasi) dan tombol hilang saat state memuat. | Lulus |
 | 4 | Password salah | "Email atau password salah." tanpa menyebut emailnya. | Lulus |
 | 5 | Login salah 11 kali | Pesan "Terlalu banyak percobaan..." (bukan layar rusak). | Lulus |
 | 6 | Email salah format, password kosong | Error per kolom (422 dari server). | Lulus |
@@ -658,3 +658,54 @@ Ubah dokumen di backend, jalankan `npm test`, `npm run docs:export`, salin `open
 - Berpindah halaman menampilkan "Memuat jurnal..." sejenak (kedip), karena data lama tidak disimpan.
 - Token hanya di memori, sehingga reload membuat pengguna keluar.
 - Uji 3 (klik berulang) tidak dapat dilakukan karena backend belum mendukung paginasi.
+
+## Minggu 20, Senin: React Router
+
+### Peta rute
+| URL | Halaman | Catatan |
+|---|---|---|
+| `/login` | `HalamanLogin` | Di luar layout |
+| `/` | Mengarah ke `/jurnal` | `Navigate replace` |
+| `/jurnal` | `HalamanJurnal` | Nomor halaman di `?halaman=N` |
+| `/jurnal/:id` | `HalamanDetailJurnal` | `id` divalidasi |
+| `/jurnal/:id/lampiran/:nomor` | `HalamanLampiran` | Dua parameter divalidasi |
+| `/profil` | `HalamanProfil` | Kerangka |
+| apa pun yang lain | `Halaman404` | Di dalam layout |
+
+### Soal 2: Link vs elemen a
+| Hal yang diamati | `NavLink` | `<a href>` |
+|---|---|---|
+| Permintaan **Doc** di Network | Kosong (tidak reload) | Muncul (reload) |
+| Tampilan berkedip | Tidak | Ya |
+| Token di memori | Tetap ada | Hilang (logout) |
+
+### Soal 3: validasi query string
+| URL | Hasil |
+|---|---|
+| `?halaman=3` | Menampilkan halaman 3 |
+| `?halaman=abc`, `-5`, `0` | Jatuh ke halaman 1 |
+| `?halaman=3abc` | Jatuh ke halaman 1 |
+| `?halaman=999` | Menampilkan "Halaman 999 tidak ada" + tombol ke halaman 1 |
+
+Reload di `?halaman=3`: URL tetap, dan permintaan `me/jurnal?page=3` terlihat di Network (meski token hilang).
+`bacaAngkaPositif` memakai regex `^\d+$` karena `Number("1e1")` bernilai 10 dan `parseInt("3abc")` bernilai 3.
+
+### Soal 4: detail jurnal
+| Keadaan | Hasil |
+|---|---|
+| id tidak valid | Halaman 404 |
+| Jurnal tidak ada | Muncul "Jurnal tidak ditemukan" |
+| Milik orang lain | *(Catat status yang benar-benar dikirim server: 403 atau 404)* |
+
+Temuan dokumen vs kenyataan: Dokumen mendaftarkan GET /jurnal/{id} hanya dengan 401 dan 404. Jika server mengembalikan 403, berarti dokumen kurang lengkap.
+
+### Soal 5: replace
+Dengan `replace`, tombol Back melewati halaman redirect (kembali ke tab baru). Tanpa `replace`, tombol Back terjebak di halaman redirect karena langsung dilempar kembali ke `/jurnal`.
+
+### Soal 7: kenapa Link, bukan elemen a
+Elemen `<a>` meminta halaman baru dari server, sehingga browser memuat ulang `index.html` dan menjalankan JavaScript dari awal. Token disimpan di variabel `accessToken` di `client.ts` (memori halaman). Saat halaman dimuat ulang, memori itu dikosongkan, sehingga pengguna keluar dan permintaan berikutnya mendapat 401. `Link` mengganti URL lewat History API dan hanya merender ulang bagian yang berubah, jadi variabel memori (token) tetap ada. Bukti dari eksperimen: saat memakai `<a>`, token hilang dan muncul pesan "Sesimu berakhir".
+
+### Keterbatasan hari ini
+- Login masih sementara: token hanya di memori, jadi reload atau mengetik URL membuat pengguna keluar (diperbaiki Minggu 20 Rabu dan Kamis).
+- Halaman belum dijaga: `/jurnal` bisa dibuka tanpa login dan menampilkan pesan sesi berakhir (Kamis).
+- Nama peserta belum tampil di header (Rabu, AuthContext).

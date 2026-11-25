@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { buatJurnal, hapusJurnal } from "../../api/jurnal";
-import { keApiError } from "../../api/errors";
+import { buatJurnal } from "../../api/jurnal";
 import { kodeLaporan, pesanUntukPengguna } from "../../api/pesan";
 import type { JurnalBaru } from "../../api/types";
 import { useJurnalSaya } from "../../hooks/useJurnalSaya";
@@ -9,26 +7,22 @@ import { Button } from "../ui/Button";
 import DaftarJurnal from "./DaftarJurnal";
 import { FormJurnal } from "./FormJurnal";
 
-// Review belum terhubung ke API (hapus sudah terhubung di bonus)
+// Hapus dan review belum terhubung ke API
 function tidakMelakukanApaApa() {
   // sengaja kosong
 }
 
-export function JurnalSaya() {
-  const [halaman, setHalaman] = useState(1);
-  const { hasil, muatUlang } = useJurnalSaya(halaman);
-  const [galatHapus, setGalatHapus] = useState<string | null>(null);
+interface JurnalSayaProps {
+  halaman: number;
+  onGantiHalaman: (halaman: number) => void;
+}
 
-  function hapus(id: number) {
-    setGalatHapus(null);
-    hapusJurnal(id)
-      .then(muatUlang)
-      .catch((err: unknown) => setGalatHapus(pesanUntukPengguna(keApiError(err))));
-  }
+export function JurnalSaya({ halaman, onGantiHalaman }: JurnalSayaProps) {
+  const { hasil, muatUlang } = useJurnalSaya(halaman);
 
   async function tambah(data: JurnalBaru): Promise<void> {
     await buatJurnal(data);
-    setHalaman(1); // jurnal terbaru ada di halaman pertama
+    onGantiHalaman(1); // jurnal terbaru ada di halaman pertama
     muatUlang();
   }
 
@@ -50,33 +44,38 @@ export function JurnalSaya() {
 
       case "berhasil": {
         const { daftar } = hasil.data;
-        // Cadangan kalau backend tidak mengirim meta (temuan nyata!)
-       // const meta = hasil.data.meta ?? { page: 2, totalPages: 3, hasNext: true, hasPrev: true };
-        const meta = hasil.data.meta ?? { page: 1, totalPages: 1, hasNext: false, hasPrev: false };
+// Cadangan kalau backend tidak mengirim meta (temuan nyata!)
+//const meta = hasil.data.meta ?? { page: 2, totalPages: 3, hasNext: true, hasPrev: true };
+const meta = hasil.data.meta ?? { page: 1, totalPages: 1, hasNext: false, hasPrev: false };
+
         if (daftar.length === 0) {
+          // URL bisa menunjuk halaman yang tidak ada (?halaman=999)
+          if (halaman > 1) {
+            return (
+              <div>
+                <p>Halaman {halaman} tidak ada.</p>
+                <Button ukuran="sm" onClick={() => onGantiHalaman(1)}>Ke halaman 1</Button>
+              </div>
+            );
+          }
           return <p>Belum ada jurnal. Tulis jurnal pertamamu!</p>;
         }
 
         return (
           <>
-            {galatHapus !== null && (
-              <Alert tipe="bahaya">
-                <p>{galatHapus}</p>
-              </Alert>
-            )}
             <DaftarJurnal
               jurnal={daftar}
               role="peserta"
               pesanKosong="Belum ada jurnal."
-              onHapus={hapus}
+              onHapus={tidakMelakukanApaApa}
               onUbahReview={tidakMelakukanApaApa}
             />
             <nav aria-label="Halaman">
-              <Button ukuran="sm" variant="secondary" disabled={!meta.hasPrev} onClick={() => setHalaman((h) => h - 1)}>
+              <Button ukuran="sm" variant="secondary" disabled={!meta.hasPrev} onClick={() => onGantiHalaman(halaman - 1)}>
                 Sebelumnya
               </Button>
               <span> Halaman {meta.page} dari {meta.totalPages} </span>
-              <Button ukuran="sm" variant="secondary" disabled={!meta.hasNext} onClick={() => setHalaman((h) => h + 1)}>
+              <Button ukuran="sm" variant="secondary" disabled={!meta.hasNext} onClick={() => onGantiHalaman(halaman + 1)}>
                 Berikutnya
               </Button>
             </nav>
