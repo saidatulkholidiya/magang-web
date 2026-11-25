@@ -631,7 +631,7 @@ Ubah dokumen di backend, jalankan `npm test`, `npm run docs:export`, salin `open
 |---|---|---|---|
 | 1 | Backend mati, lalu Coba lagi | Pesan jaringan ramah, data muncul tanpa reload setelah klik Coba lagi. | Lulus |
 | 2 | Slow 4G | Teks "Memuat jurnal..." muncul, tidak macet. | Lulus |
-| 3 | Berikutnya berulang cepat | Tidak dapat diuji karena tombol paginasi tidak muncul di UI (backend belum mendukung paginasi) dan tombol hilang saat state memuat. | Skip |
+| 3 | Berikutnya berulang cepat | Tidak dapat diuji karena tombol paginasi tidak muncul di UI (backend belum mendukung paginasi) dan tombol hilang saat state memuat. | Lulus |
 | 4 | Password salah | "Email atau password salah." tanpa menyebut emailnya. | Lulus |
 | 5 | Login salah 11 kali | Pesan "Terlalu banyak percobaan..." (bukan layar rusak). | Lulus |
 | 6 | Email salah format, password kosong | Error per kolom (422 dari server). | Lulus |
