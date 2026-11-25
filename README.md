@@ -709,3 +709,42 @@ Elemen `<a>` meminta halaman baru dari server, sehingga browser memuat ulang `in
 - Login masih sementara: token hanya di memori, jadi reload atau mengetik URL membuat pengguna keluar (diperbaiki Minggu 20 Rabu dan Kamis).
 - Halaman belum dijaga: `/jurnal` bisa dibuka tanpa login dan menampilkan pesan sesi berakhir (Kamis).
 - Nama peserta belum tampil di header (Rabu, AuthContext).
+
+## Minggu 20, Selasa: Menyimpan Token: Serangan XSS & Migrasi ke Cookie httpOnly
+
+### Soal 1: Mencuri Token (di Sistem Sendiri)
+
+1. Token tercetak di Console: Berhasil. Refresh token muncul ketika dibaca melalui localStorage.
+
+2. Dipakai lewat curl di luar browser: Berhasil. Refresh token dapat digunakan untuk meminta access token baru tanpa login kembali.
+
+3. Berlaku berapa lama: 7 hari, sesuai masa berlaku refresh token.
+
+4. Yang bisa dilakukan penyerang:
+Penyerang bisa menggunakan refresh token untuk meminta access token baru berulang kali.
+Dengan access token tersebut, penyerang bisa mengakses API sebagai korban,
+misalnya membaca, membuat, atau menghapus jurnal.
+
+## Soal 2: Tabel Penyimpanan
+
+Berikut perbandingan beberapa tempat penyimpanan data di browser berdasarkan akses JavaScript, ketahanan data setelah halaman di-reload, risiko keamanan, dan penggunaannya.
+
+| Tempat | Terbaca JS? | Bertahan reload? | Risiko | Cocok untuk |
+|---|---|---|---|---|
+| Variabel memori | Bisa diakses oleh kode yang memiliki akses ke variabel tersebut | Tidak, data akan hilang saat halaman di-reload | Data harus dibuat atau diminta kembali setelah halaman dimuat | Access token sementara |
+| `localStorage` | Ya | Ya, data tetap tersimpan | Data bisa dicuri jika terjadi serangan XSS | Tema dan preferensi pengguna |
+| `sessionStorage` | Ya | Ya, selama tab masih terbuka | Data bisa dicuri melalui XSS | Data sementara seperti draf formulir |
+| Cookie biasa | Ya, jika tidak menggunakan `httpOnly` | Ya, sesuai masa berlaku cookie | Berisiko terkena XSS dan CSRF | Preferensi yang boleh dibaca JavaScript |
+| Cookie `httpOnly` | Tidak | Ya, sesuai masa berlaku cookie | Masih berisiko CSRF, tetapi dapat dikurangi dengan `SameSite` | Refresh token atau sesi login |
+
+### Kenapa access token boleh disimpan di memori?
+
+Access token boleh disimpan di memori karena masa berlakunya singkat, yaitu sekitar 15 menit. Jadi, jika token tersebut bocor, waktu yang dimiliki penyerang untuk menggunakannya juga terbatas. Selain itu, jika halaman di-reload dan token hilang, aplikasi masih bisa mendapatkan access token baru menggunakan refresh token.
+
+### Kenapa refresh token tidak boleh disimpan di `localStorage`?
+
+Refresh token tidak boleh disimpan di `localStorage` karena JavaScript bisa membaca data yang ada di dalamnya. Jika terjadi serangan XSS, penyerang bisa mengambil refresh token tersebut. Karena masa berlakunya sampai 7 hari, penyerang bisa terus meminta access token baru dan mengakses akun korban tanpa harus login kembali.
+
+### Kesimpulan
+
+Setiap tempat penyimpanan memiliki fungsi dan risiko masing-masing. Access token lebih cocok disimpan di memori karena masa berlakunya singkat, sedangkan refresh token lebih aman disimpan menggunakan cookie `httpOnly` agar tidak bisa dibaca langsung oleh JavaScript.
