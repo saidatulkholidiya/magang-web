@@ -750,3 +750,43 @@ Refresh token tidak boleh disimpan di `localStorage` karena JavaScript bisa memb
 Setiap tempat penyimpanan memiliki fungsi dan risiko masing-masing. Access token lebih cocok disimpan di memori karena masa berlakunya singkat, sedangkan refresh token lebih aman disimpan menggunakan cookie `httpOnly` agar tidak bisa dibaca langsung oleh JavaScript.
 - Uji 3 (klik berulang) tidak dapat dilakukan karena backend belum mendukung paginasi.
 
+## Minggu 20, Rabu: AuthContext dan Pemulihan Sesi
+
+### Soal 1: useAuth di luar Provider
+- Pesan error: `useAuth harus dipakai di dalam AuthProvider`.
+- Kenapa dibuat melempar error: Agar penggunaan `useAuth` di luar `AuthProvider` langsung diketahui dan tidak menyebabkan error yang membingungkan.
+
+### Soal 3: Uji login
+
+| Uji | Hasil |
+|---|---|
+| Login benar | Berhasil masuk ke aplikasi. |
+| Password salah | Muncul pesan email atau password salah. |
+| Email format salah (422) | Muncul pesan bahwa data yang dikirim belum valid. |
+| 11 kali salah (429) | Belum dicatat hasil pengujiannya. |
+
+### Soal 4: Pulihkan sesi
+- Permintaan di Network setelah reload: `POST /auth/refresh` dan `GET /me`, keduanya berhasil dengan status 200 OK.
+- Setelah cookie dihapus: Belum dicatat hasil pengujiannya.
+
+### Soal 5: Server mati
+- Hasil: Request refresh menghasilkan 502 Bad Gateway dan aplikasi menampilkan pesan kesalahan server serta tombol Muat ulang.
+- Kenapa galat dibedakan dari keluar: Karena server yang tidak bisa dihubungi belum tentu berarti sesi pengguna sudah tidak berlaku.
+
+### Soal 6: Keluar
+- Cookie: `refreshToken` berhasil dihapus.
+- Token memori: Dihapus saat logout.
+- Tombol Back: Belum dicatat hasil pengujiannya.
+
+### Soal 7: Identitas nilai Context
+- Dengan `useMemo` dan `useCallback`: `UjiKonteks` tidak render ulang ketika tombol Render induk diklik.
+- Tanpa `useMemo` dan `useCallback`: `UjiKonteks` render ulang setiap kali tombol diklik.
+- Kesimpulan: `useMemo` dan `useCallback` membantu menjaga identitas nilai Context. Tanpanya, setiap render `AuthProvider` membuat objek baru sehingga konsumennya ikut render ulang.
+
+### Soal 8
+Context cocok digunakan untuk data yang dibutuhkan oleh banyak komponen, seperti status login, tema, dan bahasa, karena tidak perlu mengirim props secara berulang. Namun, Context tidak cocok untuk semua state karena perubahan nilainya dapat membuat komponen pengguna Context render ulang. State yang sering berubah, seperti isi form, lebih baik disimpan dekat komponen yang menggunakannya. Boolean `sudahLogin` hanya memiliki dua kondisi, padahal autentikasi memiliki empat kondisi, yaitu `memeriksa`, `keluar`, `masuk`, dan `galat`. Status `memeriksa` digunakan saat aplikasi belum mengetahui kondisi sesi, sedangkan `galat` digunakan ketika pemeriksaan gagal karena masalah server. Discriminated union membantu membedakan kondisi tersebut agar keadaan yang tidak sesuai dapat dihindari.
+
+### Keterbatasan hari ini
+- Halaman belum dijaga: `/jurnal` bisa dibuka tanpa login (Kamis).
+- Penyegaran token otomatis belum ada: access token habis setelah 15 menit (Kamis).
+- `ambilTujuan` masih selalu `/jurnal` (Kamis).
