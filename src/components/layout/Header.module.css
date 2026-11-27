@@ -6,5 +6,19 @@
   padding-bottom: 1rem;
   margin-bottom: 1.5rem;
 }
-.header h1 { margin: 0; font-size: 1.5rem; }
-.header span { font-weight: bold; color: var(--warna-utama); }
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.header span {
+  font-weight: bold;
+  color: var(--warna-utama);
+}
+
+.aksi {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

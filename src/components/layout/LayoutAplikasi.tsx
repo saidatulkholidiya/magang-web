@@ -1,16 +1,24 @@
-import { NavLink, Outlet, useNavigate } from "react-router";
-import { setAccessToken } from "../../api/client"; 
-import { Button } from "../ui/Button"; 
+
+import { Link, NavLink, Outlet, useNavigate } from "react-router";
+
+import { useAuth } from "../auth/useAuth";
+import { Button } from "../ui/Button";
 import styles from "./LayoutAplikasi.module.css";
 
-// NavLink memberi tahu apakah tautannya sedang aktif
-const kelasTautan = ({ isActive }: { isActive: boolean }) => (isActive ? styles.aktif : undefined);
+const kelasTautan = ({ isActive }: { isActive: boolean }) =>
+  isActive ? styles.aktif : undefined;
 
 export function LayoutAplikasi() {
   const navigate = useNavigate();
+  const { auth, keluar } = useAuth();
 
-  function keluar() {
-    setAccessToken(null);
+  async function handleKeluar() {
+    try {
+      await keluar();
+    } catch {
+      // Status lokal tetap dihapus oleh fungsi keluar
+    }
+
     navigate("/login", { replace: true });
   }
 
@@ -18,12 +26,31 @@ export function LayoutAplikasi() {
     <>
       <header className={styles.header}>
         <p className={styles.merek}>Jurnal Magang</p>
+
         <nav aria-label="Utama" className={styles.menu}>
-          <NavLink to="/jurnal" className={kelasTautan}>Jurnal</NavLink>
-          <NavLink to="/profil" className={kelasTautan}>Profil</NavLink>
-          {/*<a href="/profil">Profil</a>*/}
+          <NavLink to="/jurnal" className={kelasTautan}>
+            Jurnal
+          </NavLink>
+
+          <NavLink to="/profil" className={kelasTautan}>
+            Profil
+          </NavLink>
         </nav>
-        <Button variant="secondary" ukuran="sm" onClick={keluar}>Keluar</Button>
+
+        {auth.status === "masuk" ? (
+          <>
+            <span>{auth.pengguna.nama}</span>
+            <Button
+              variant="secondary"
+              ukuran="sm"
+              onClick={handleKeluar}
+            >
+              Keluar
+            </Button>
+          </>
+        ) : (
+          <Link to="/login">Masuk</Link>
+        )}
       </header>
 
       <main>

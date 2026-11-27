@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { FormLogin } from "../components/auth/FormLogin"; 
+import { FormLogin } from "../components/auth/FormLogin";
 
 export function HalamanLogin() {
   const navigate = useNavigate();
@@ -7,7 +7,10 @@ export function HalamanLogin() {
   return (
     <main>
       <h1>Jurnal Magang</h1>
-      <FormLogin onBerhasil={() => navigate("/jurnal", { replace: true })} />
+
+      <FormLogin
+        onBerhasil={() => navigate("/jurnal", { replace: true })}
+      />
     </main>
   );
 }
